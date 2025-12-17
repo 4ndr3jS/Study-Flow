@@ -185,3 +185,59 @@ ul .links:hover{
 .SignUp .LogIn .close{
     transition: all 0.3s ease;
 }
+
+.about {
+    max-width: 800px;
+    margin: 80px auto;
+    padding: 0 20px;
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #f9fafb;
+    border-radius: 16px;
+    padding: 48px 40px;
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.05);
+}
+
+.about h2{
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 24px;
+    letter-spacing: -0.5px;
+}
+
+.about h2::after{
+    content: "";
+    display: block;
+    width: 143px;
+    height: 4px;
+    background: #346ee9;
+    border-radius: 2px;
+    margin-top: 12px;
+}
+
+.about p{
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #4b5563;
+    margin-bottom: 20px;
+    max-width: 720px;
+}
+
+.about p:first-of-type{
+    font-size: 1.1rem;
+    color: #374151;
+}
+
+@media (min-width: 768px) {
+    .about{
+        margin: 120px auto;
+    }
+
+    .about h2{
+        font-size: 2.6rem;
+    }
+
+    .about p{
+        font-size: 1.1rem;
+    }
+}
