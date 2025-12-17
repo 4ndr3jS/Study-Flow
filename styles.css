@@ -35,6 +35,9 @@ nav {
     font-size: 15px;
     transform: scale(1.05);
 }
+.signlog:active{
+    background-color: #0fa55a;
+}
 
 ul .links{
     text-decoration: none;
@@ -50,4 +53,135 @@ ul .links:hover{
     color: green;
     font-size: 19px;
     transform: translateY(-3px);
+}
+
+.modalForm{
+    background-color: white;
+    padding: 40px;
+    border-radius: 12px;
+    max-width: 400px;
+    margin: 100px auto;
+}
+
+.email{
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+.password{
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+.SignUp{
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #10b964;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+.LogIn{
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    background-color: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+.close{
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 28px;
+    border: none;
+    cursor: pointer;
+    background-color: transparent;
+    color: #6b7280;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+#authModal{
+    position:fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn{
+    from{
+        opacity: 0;
+    }
+    to{
+        opacity: 1;
+    }
+}
+
+.modalForm{
+    position: relative;
+    background-color: white;
+    padding: 40px;
+    padding-top: 15px;
+    border-radius: 12px;
+    max-width: 400px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    animation: slideDown 0.4s ease;
+}
+
+@keyframes slideDown {
+    from {
+        transform: translateY(-50px);
+        opacity: 0;
+    }
+    to{
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.email:focus, .password:focus{
+    outline: none;
+    border-color: #10b964;
+    box-shadow: 0 0 0 3px rgba(16, 185, 100, 0.1);
+}
+
+.SignUp:hover{
+    background-color: #0fa55a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 100, 0.3);
+}
+
+.LogIn:hover{
+    background-color: #047857;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.close:hover{
+    color: #000;
+}
+
+.SignUp .LogIn .close{
+    transition: all 0.3s ease;
 }
