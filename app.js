@@ -9,7 +9,6 @@ async function signUp(email, password) {
         return false;
     }
 
-    console.log('User has signed up: ', data);
     return true
 }
 
@@ -21,8 +20,17 @@ async function logIn(email, password) {
 
     if(error){
         console.error('Error logging in: ', error.message);
+        
+        if(error.message.includes('Invalid login credentials')) {
+            alert('Incorrect email or password. Please try again.');
+        } else if(error.message.includes('Email not confirmed')) {
+            alert('Please confirm your email before logging in. Check your inbox.');
+        } else {
+            alert('Log in failed: ' + error.message);
+        }
         return false;
     }
+    
     console.log('User has logged in: ', data);
     return true;
 }
@@ -35,7 +43,6 @@ async function logOut() {
         return false;
     }
 
-    console.log('User has logged out: ');
     return true;
 }
 
