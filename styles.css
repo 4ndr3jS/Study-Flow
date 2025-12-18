@@ -22,7 +22,7 @@ nav {
     backdrop-filter: blur(20px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, .08);
-    transform: translateY(-170%);
+    transform: translateY(-90px);
     width: 1500px;
     padding-left: 20px;
     padding-right: 20px;
@@ -217,6 +217,7 @@ ul .links:hover{
     box-shadow: 0 16px 30px rgba(0, 0, 0, 0.05);
     padding-bottom: 32px;
     padding-top: 36px;
+    margin-top: 100px;
 }
 
 .about h2{
@@ -253,7 +254,8 @@ ul .links:hover{
 
 @media (min-width: 768px) {
     .about{
-        margin: 80px auto;
+        margin: 60px auto;
+        margin-top: 100px;
     }
 
     .about h2{
@@ -271,10 +273,10 @@ ul .links:hover{
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     padding: 40px;
-    padding-left: 60px;
+    padding-left: 40px;
     padding-bottom: 35px;
     padding-right: 65px;
-    width: 1050px;
+    width: 1070px;
     justify-self: center;
     margin-bottom: 50px;
 }
@@ -299,8 +301,8 @@ ul .links:hover{
 }
 
 .item:hover{
-    transform: translateY(-6px);
-    box-shadow: 10px 26px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-3px);
+    box-shadow: 8px 19px 16px rgba(0, 0, 0, 0.3);
 }
 
 .title{
