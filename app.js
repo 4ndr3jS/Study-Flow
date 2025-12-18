@@ -58,3 +58,49 @@ async function checkUser() {
         return null;
     }
 }
+
+async function checkNameExist(name) {
+    const { data: { user} } = await supabase.auth.getUser();
+    if(!user){
+        return false;
+    }
+    const { data, error} = await supabase .from('user_names') .select('name') .eq('name', name.toLowerCase()) .neq('user_id', user.id);
+
+    if(error){
+        console.error("Error checking name", error);
+        return false;
+    }
+    return data && data.length > 0;
+}
+
+async function updateUserName(newName) {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if(!user){
+        alert("You must be logged in to change your name");
+        return false;
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+        data: { display_name: newName }
+    });
+
+    if(error){
+        alert("Failed to update name: " + error.message);
+        return false;
+    }
+
+    const { error: dbError } = await supabase
+        .from('user_names')
+        .upsert({ 
+            user_id: user.id, 
+            name: newName.toLowerCase() 
+        });
+
+    if(dbError){
+        console.error('Error storing name in database:', dbError);
+    }
+
+    console.log('Name updated:', newName);
+    return true;
+}
