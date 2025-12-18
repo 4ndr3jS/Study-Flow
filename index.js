@@ -91,22 +91,54 @@ async function handleNameChange(){
     }
 }
 
-async function updateUserName(newName) {
-    const{ data, error } = await supabase.auth.updateUser({
-        data: {display_name: newName}
-    });
-    if(error){
-        alert("Failed to update name: " + error.message);
+async function handlePasswordChange(){
+    const newPassword = document.getElementById('passwordChange').value.trim();
+    
+    if(!newPassword){
+        alert("Enter a new password");
+        return;
     }
-    console.log(newName);
-    return true;
+
+    if(newPassword.length < 6){
+        alert("Password must be at least 6 characters long");
+        return;
+    }
+
+    const confirmed = confirm("Are you sure you want to change your password?");
+    if(!confirmed){
+        return;
+    }
+
+    const success = await updateUserPassword(newPassword);
+    if(success){
+        alert('Password updated successfully!');
+        document.getElementById('passwordChange').value = '';
+    }
+}
+
+async function handleDeleteAccount(){
+    const confirmed = confirm("Are you sure you want to delete your account? This action CANNOT be undone!");
+    if(!confirmed){
+        return;
+    }
+
+    const doubleConfirm = confirm("This will permanently delete all your data. Are you absolutely sure?");
+    if(!doubleConfirm){
+        return;
+    }
+
+    const success = await deleteUserAccount();
+    if(success){
+        alert('Your account has been deleted.');
+        window.location.href = 'index.html';
+    }
 }
 
 async function checkAuth() {
     const user = await checkUser();
     const signlogButton = document.querySelector('.signlog');
     const welcomeText = document.querySelector('.wlcm');
-    const settings = document.getElementById('settings')
+    const settings = document.getElementById('settings');
     const logoutButton = document.getElementById('logout');
     const nameInput = document.getElementById('nameChange');
     
@@ -120,7 +152,10 @@ async function checkAuth() {
         if(welcomeText){
             welcomeText.textContent = `Welcome, ${userName}!`;
             welcomeText.style.display = 'block';
-            settings.style.display = 'inline-block'
+        }
+        
+        if(settings){
+            settings.style.display = 'inline-block';
         }
         
         if(nameInput){
@@ -145,6 +180,9 @@ async function checkAuth() {
         }
         if(logoutButton){
             logoutButton.style.display = 'none';
+        }
+        if(settings){
+            settings.style.display = 'none';
         }
         if(nameInput){
             nameInput.value = '';
