@@ -175,3 +175,55 @@ async function checkAuth() {
 checkAuth();
 check();
 check2();
+
+const searchInput = document.getElementById('searchInput');
+const dropdownMenu = document.getElementById('dropdownMenu');
+const dropdownItems = document.querySelectorAll('.dropdown-item');
+
+searchInput.addEventListener('focus', () => {
+    dropdownMenu.classList.add('show');
+});
+
+searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    
+    dropdownItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if(text.includes(searchTerm)) {
+            item.classList.remove('hidden');
+        } else {
+            item.classList.add('hidden');
+        }
+    });
+    
+    if(!dropdownMenu.classList.contains('show')) {
+        dropdownMenu.classList.add('show');
+    }
+});
+
+dropdownItems.forEach(item => {
+    item.addEventListener('click', () => {
+        searchInput.value = item.textContent;
+        dropdownMenu.classList.remove('show');
+        
+        const selectedValue = item.getAttribute('data-value');
+        console.log('Selected:', selectedValue);
+        
+    });
+});
+
+document.addEventListener('click', (e) => {
+    if(!e.target.closest('.search-dropdown')) {
+        dropdownMenu.classList.remove('show');
+    }
+});
+
+searchInput.addEventListener('keydown', (e) => {
+    const visibleItems = Array.from(dropdownItems).filter(item => 
+        !item.classList.contains('hidden')
+    );
+    
+    if(e.key === 'Enter' && visibleItems.length > 0) {
+        visibleItems[0].click();
+    }
+});
