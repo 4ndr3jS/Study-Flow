@@ -734,3 +734,45 @@ body.dark-mode .nameInput::placeholder {
     height: 420px;
     width: 100%;
 }
+
+.nameFile{
+    font-size: 16px;
+    font-weight: 400;
+    margin: 0;
+}
+
+.fileSize{
+    font-size: 12px;
+    font-weight: 400;
+    margin: 0;
+}
+.button {
+    font-size: 16px;
+    font-weight: 600;
+    height: 66px;
+    width: 348px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.button2 {
+    font-size: 16px;
+    font-weight: 600;
+    height: 66px;
+    width: 348px;
+    border-radius: 10px;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.buttons2{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
