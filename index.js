@@ -176,7 +176,6 @@ checkAuth();
 check();
 check2();
 
-// Function to initialize a searchable dropdown
 function initSearchableDropdown(inputSelector, menuSelector) {
     const searchInput = document.querySelector(inputSelector);
     const dropdownMenu = document.querySelector(menuSelector);
@@ -220,11 +219,9 @@ function initSearchableDropdown(inputSelector, menuSelector) {
     });
 }
 
-// Initialize both dropdowns
 initSearchableDropdown('#searchInputFont', '#dropdownMenu');
 initSearchableDropdown('#searchInputColors', '#dropdownMenuColors');
 
-// Global click handler to close all dropdowns
 document.addEventListener('click', (e) => {
     if(!e.target.closest('.search-dropdown')) {
         document.querySelectorAll('.dropdown-menu').forEach(menu => {
@@ -232,3 +229,128 @@ document.addEventListener('click', (e) => {
         });
     }
 });
+
+document.addEventListener('click', (e) => {
+    if(!e.target.closest('.search-dropdown')) {
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.classList.remove('show');
+        });
+    }
+});
+// for dark mode
+function initDarkMode() {
+    const modeToggle = document.getElementById('modetoggle');
+    if(!modeToggle) return;
+
+    const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+    modeToggle.checked = isDarkMode;
+    applyDarkMode(isDarkMode);
+
+    modeToggle.addEventListener('change', (e) => {
+        const darkModeEnabled = e.target.checked;
+        localStorage.setItem('darkMode', darkModeEnabled);
+        applyDarkMode(darkModeEnabled);
+    });
+}
+
+function applyDarkMode(isDark) {
+    const containers = document.querySelectorAll('.container3');
+    const titles = document.querySelectorAll('.title2');
+    const labels = document.querySelectorAll('.container3 label');
+    const descriptions = document.querySelectorAll('.container3 .description');
+    const nameChange = document.getElementById('nameChange');
+    const passwordChange = document.getElementById('passwordChange');
+    const deleteLabel = document.getElementById('deleteLabel');
+    const searchInputFont = document.getElementById('searchInputFont');
+    const dropdownMenu = document.getElementById('dropdownMenu');
+    const dropdownItems = document.querySelectorAll('.dropdown-item');
+    const searchInputColors = document.getElementById('searchInputColors');
+    
+    if(isDark) {
+        containers.forEach(container => {
+            container.style.background = '#0206178c';
+            container.style.color = '#ffffff';
+        });
+        titles.forEach(title => {
+            title.style.color = '#ffffff';
+        });
+        labels.forEach(label => {
+            label.style.color = '#ffffff';
+        });
+        descriptions.forEach(desc => {
+            desc.style.color = '#ffffff';
+        });
+        if(nameChange) {
+            nameChange.style.backgroundColor = '#12296f';
+            nameChange.style.color = '#ffffff';
+        }
+        if(searchInputColors){
+            searchInputColors.style.backgroundColor = "#12296f";
+            searchInputColors.style.color = "#ffffff";
+        }
+        if(passwordChange) {
+            passwordChange.style.backgroundColor = '#12296f';
+            passwordChange.style.color = '#ffffff';
+        }
+        if(searchInputFont) {
+            searchInputFont.style.backgroundColor = '#12296f';
+            searchInputFont.style.color = '#ffffff';
+        }
+        if(dropdownMenu) {
+            dropdownMenu.style.backgroundColor = '#12296f';
+        }
+        dropdownItems.forEach(item => {
+            item.style.color = '#ffffff';
+            item.style.backgroundColor = '#12296f';
+        });
+    } else {
+        containers.forEach(container => {
+            container.style.background = '#e9edf4';
+        });
+        titles.forEach(title => {
+            title.style.color = '#1f2937';
+        });
+        
+        if(deleteLabel) {
+            deleteLabel.style.color = '#1f2937';
+        }
+        
+        labels.forEach(label => {
+            if(label.id !== 'deleteLabel') {
+                label.style.color = '#1f2937';
+            }
+        });
+        
+        descriptions.forEach(desc => {
+            desc.style.color = '#4b5563';
+        });
+        if(nameChange) {
+            nameChange.style.backgroundColor = '#e6e8eb';
+            nameChange.style.color = '#1f2937';
+            nameChange.style.borderColor = '#525b6e';
+        }
+        if(passwordChange) {
+            passwordChange.style.backgroundColor = '#e6e8eb';
+            passwordChange.style.color = '#1f2937';
+            passwordChange.style.borderColor = '#525b6e';
+        }
+        if(searchInputFont) {
+            searchInputFont.style.backgroundColor = '#e6e8eb';
+            searchInputFont.style.borderColor = '#525b6e';
+            searchInputFont.style.color = '#1f2937';
+        }
+        if(dropdownMenu) {
+            dropdownMenu.style.backgroundColor = '#e6e8eb';
+        }
+        if(searchInputColors){
+            searchInputColors.style.backgroundColor = "#e6e8eb";
+            searchInputColors.style.color = "#1f2937";
+        }
+        dropdownItems.forEach(item => {
+            item.style.color = '#1f2937';
+            item.style.backgroundColor = '#e6e8eb';
+        });
+    }
+}
+
+initDarkMode();
