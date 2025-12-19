@@ -425,8 +425,12 @@ ul .links:hover{
     transition: 0.3s ease;
 }
 
-.nameChange:active{
+.nameChange:hover{
    background-color: #0d58ad;
+}
+
+.nameChange:active{
+   background-color: #094c99;
 }
 
 .passwordChange{
@@ -438,6 +442,15 @@ ul .links:hover{
     color: #fff;
     border: 1px solid rgb(110, 120, 139);
     border-radius: 16px;
+    transition: 0.3s ease;
+}
+
+.passwordChange:hover{
+   background-color: #c56f0d;
+}
+
+.passwordChange:active{
+   background-color: #a35c0b;
 }
 
 .deleteAccount{
@@ -449,6 +462,15 @@ ul .links:hover{
     color: #fff;
     border: 1px solid #991b1b;
     border-radius: 16px;
+    transition: 0.3s ease;
+}
+
+.deleteAccount:hover{
+   background-color: #be2121;
+}
+
+.deleteAccount:active{
+   background-color: #ad1f1f;;
 }
 
 .switch{
@@ -543,15 +565,27 @@ input:checked + .slider::before{
     padding: 10px 15px;
     cursor: pointer;
     color: #fff;
-    transition: background-color 0.2s;
+    transition: background-color 0.3s ease;
 }
-
 .dropdown-item:hover {
-    background-color: #1a6fcf;
+    background-color: #1a6fcf; !important
 }
 
 .dropdown-item.hidden {
     display: none;
+}
+
+.dropdown-item {
+    background-color: #e6e8eb;
+}
+
+.dropdown-item.dark-mode {
+    background-color: #12296f;
+    color: #ffffff;
+}
+
+.dropdown-item:hover {
+    background-color: #1a6fcf !important;
 }
 
 .dropdown-menu::-webkit-scrollbar {
