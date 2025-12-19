@@ -425,6 +425,7 @@ function applyDarkMode(isDark) {
     const items = document.querySelectorAll('.item');
     const conatinerBtns = document.querySelectorAll('.containerBtn');
     const chatContainer = document.getElementById('chat');
+    const chatP = document.getElementById('chatP')
 
     if(isDark) {
         containers.forEach(container => {
@@ -482,6 +483,9 @@ function applyDarkMode(isDark) {
         if(dropdownMenu) {
             dropdownMenu.style.backgroundColor = '#12296f';
         }
+        if(chatP) {
+            chatP.style.color = '#c7c6c4';
+        }
     } else {
         containers.forEach(container => {
             container.style.background = '#e9edf4';
@@ -496,7 +500,9 @@ function applyDarkMode(isDark) {
         if(deleteLabel) {
             deleteLabel.style.color = '#1f2937';
         }
-        
+        if(chatP) {
+            chatP.style.color = '#c7c6c4';
+        }
         labels.forEach(label => {
             if(label.id !== 'deleteLabel') {
                 label.style.color = '#1f2937';
