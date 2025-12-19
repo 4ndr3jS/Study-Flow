@@ -245,7 +245,7 @@ document.addEventListener('click', (e) => {
         });
     }
 });
-// for dark mode
+
 function initDarkMode() {
     const modeToggle = document.getElementById('modetoggle');
     if(!modeToggle) return;
@@ -287,6 +287,121 @@ initSearchableDropdown('#searchInputFont', '#dropdownMenu');
 initFont();
 function applyFont(fontName) {
     document.body.style.fontFamily = fontName;
+}
+
+function initAccentColor(){
+    const colorInput = document.getElementById('searchInputColors');
+    if(!colorInput){
+        return;
+    }
+
+    const savedColor = localStorage.getItem('color');
+    if(savedColor) {
+        setTimeout(() => {
+            colorInput.value = savedColor;
+        }, 0);
+        applyColor(savedColor);
+    }
+
+    const dropdownItems = document.querySelectorAll('#dropdownMenuColors .dropdown-item');
+    dropdownItems.forEach(item => {
+        item.addEventListener('click', () => {
+            const selectedColor = item.getAttribute('data-value');
+            localStorage.setItem('color', selectedColor);
+            applyColor(selectedColor);
+        });
+    });
+}
+
+initSearchableDropdown('#searchInputFont', '#dropdownMenu');
+initAccentColor();
+function applyColor(colorName) {
+    const colors = {
+        Blue: {
+            top: 'rgb(24, 52, 145)',
+            bottom: 'rgb(10, 23, 59)'
+        },
+        Red: {
+            top: 'rgb(145, 24, 24)',
+            bottom: 'rgb(59, 10, 10)'
+        },
+        Yellow: {
+            top: 'rgb(145, 132, 24)',
+            bottom: 'rgb(59, 52, 10)'
+        },
+        Green: {
+            top: 'rgb(24, 145, 58)',
+            bottom: 'rgb(10, 59, 23)'
+        }
+    };
+
+    const selectedColor = colors[colorName] || colors.Blue;
+
+    document.documentElement.style.background = `radial-gradient(
+        circle at center top,
+        ${selectedColor.top},
+        ${selectedColor.bottom} 70%
+    )`;
+
+    document.body.style.background = `radial-gradient(
+        circle at center top,
+        ${selectedColor.top},
+        ${selectedColor.bottom} 70%
+    )`;
+
+    switch (colorName) {
+        case 'Blue':
+            setAccent('#12296f');
+            break;
+
+        case 'Yellow':
+            setAccent('#f5c542');
+            break;
+
+        case 'Red':
+            setAccent('#d32f2f');
+            break;
+
+        case 'Green':
+            setAccent('#2e7d32');
+            break;
+    }
+}
+
+function setAccent(color) {
+    localStorage.setItem('accent', color);
+    document.documentElement.style.setProperty('--accent-bg', color);
+    document.documentElement.style.setProperty('--accent-hover', color);
+
+    const elements = [
+        document.getElementById('nameChange'),
+        document.getElementById('searchInputColors'),
+        document.getElementById('passwordChange'),
+        document.getElementById('searchInputFont')
+    ];
+
+    elements.forEach(el => {
+        if (el) {
+            el.style.backgroundColor = color;
+            el.style.color = '#ffffff';
+            el.style.border = 'none';
+        }
+    });
+}
+
+function applyAccentToElements(elements) {
+    const accent = localStorage.getItem('accent') || '#12296f';
+    
+    elements.forEach(el => {
+        if (!el) return;
+
+        el.style.backgroundColor = accent;
+        el.style.color = '#ffffff';
+        el.style.border = `1px solid ${accent}`;
+        el.style.outline = 'none';
+    });
+
+    
 }
 
 
@@ -347,34 +462,16 @@ function applyDarkMode(isDark) {
         items.forEach(item =>{
             item.style.backgroundColor = '#0E1A4F';
         });
-        if(nameChange) {
-            nameChange.style.backgroundColor = '#12296f';
-            nameChange.style.color = '#ffffff';
-            nameChange.style.border = 'none';
-        }
-        if(searchInputColors){
-            searchInputColors.style.backgroundColor = "#12296f";
-            searchInputColors.style.color = "#ffffff";
-            searchInputColors.style.border = 'none';
-        }
-        if(passwordChange) {
-            passwordChange.style.backgroundColor = '#12296f';
-            passwordChange.style.color = '#ffffff';
-            passwordChange.style.border = 'none';
-        }
-        if(searchInputFont) {
-            searchInputFont.style.backgroundColor = '#12296f';
-            searchInputFont.style.color = '#ffffff';
-            searchInputFont.style.border = 'none';
-        }
+        applyAccentToElements([
+            nameChange,
+            passwordChange,
+            searchInputFont,
+            searchInputColors,
+            ...dropdownItems
+        ]);
         if(dropdownMenu) {
             dropdownMenu.style.backgroundColor = '#12296f';
         }
-        dropdownItems.forEach(item => {
-            item.style.color = '#ffffff';
-            item.style.backgroundColor = '#12296f';
-            item.classList.add('dark-mode');
-        });
     } else {
         containers.forEach(container => {
             container.style.background = '#e9edf4';
@@ -432,4 +529,5 @@ initDarkMode();
 document.addEventListener('DOMContentLoaded', () => {
     const isDarkMode = localStorage.getItem('darkMode') !== 'false';
     applyDarkMode(isDarkMode);
+    document.body.classList.add('dark-mode');
 });
