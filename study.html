@@ -34,10 +34,14 @@
 
     <div class="chatContainer" id="chat">
         <div class="chatBox">
-            
+            <div class="intro">
+                <p id="chatP" style="text-align: center;">This is Flashy<br><br>
+                    <img src="bot.png" alt="" style="height: 90px; width: auto; opacity: 0.5;"><br><br>
+                    Ask him anything you want, he'll respond right away!</p>
+            </div>
         </div>
         <div class="chatwithBot">
-        <form autocomplete="off" onsubmit="return false;" style="width: 100%;">
+        <form autocomplete="off" onsubmit="return false;" style="width: 91%;">
             <input
                 type="text"
                 class="chatInput"
@@ -46,7 +50,10 @@
                 spellcheck="false"
             />
         </form>
-            <button id="send" class="send1"><img src="send.png" class="send"></button>
+            <button id="send" class="send1">
+                <img src="send.png" class="send" style="display: none;">
+                <img src="send2.png" class="send" style="display: block;">
+            </button>
         </div>
     </div>
 
