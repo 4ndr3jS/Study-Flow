@@ -566,6 +566,7 @@ input:checked + .slider::before{
     cursor: pointer;
     color: #fff;
     transition: background-color 0.3s ease;
+    background-color: var(--accent-bg, #e6e8eb);
 }
 .dropdown-item:hover {
     background-color: #1a6fcf; !important
@@ -586,6 +587,8 @@ input:checked + .slider::before{
 
 .dropdown-item:hover {
     background-color: #1a6fcf !important;
+    background-color: var(--accent-hover, #12296f);
+    color: #fff;
 }
 
 .dropdown-menu::-webkit-scrollbar {
@@ -613,4 +616,12 @@ input:checked + .slider::before{
 
 .dropdown-menu::-webkit-scrollbar {
     display: none;
+}
+
+body.dark-mode .nameInput {
+    color: #fff;
+}
+body.dark-mode .nameInput::placeholder {
+    color: #ffffff;
+    opacity: 0.9    ;
 }
