@@ -406,7 +406,7 @@ function applyAccentToElements(elements) {
 
 
 function applyDarkMode(isDark) {
-    const containers = document.querySelectorAll('.container3, .container');
+    const containers = document.querySelectorAll('.container3, .container, .chatContainer');
     const aboutSection = document.querySelector('.about');
     const titles = document.querySelectorAll('.title2');
     const titles1 = document.querySelectorAll('.title')
@@ -424,8 +424,11 @@ function applyDarkMode(isDark) {
     const names = document.querySelectorAll('.name');
     const items = document.querySelectorAll('.item');
     const conatinerBtns = document.querySelectorAll('.containerBtn');
-    const chatContainer = document.getElementById('chat');
-    const chatP = document.getElementById('chatP')
+    const chatP = document.getElementById('chatP');
+    const uploadPs = document.querySelectorAll('#upload p');
+    const uploadMainText = document.getElementById('uploadMainText');
+    const button = document.querySelector('.button');
+    const button2 = document.querySelector('.button2');
 
     if(isDark) {
         containers.forEach(container => {
@@ -444,14 +447,18 @@ function applyDarkMode(isDark) {
         titles.forEach(title => {
             title.style.color = '#fff'
         });
-        if(chatContainer){
-            chatContainer.style.background = '#0206178c'
-            chatContainer.style.color = '#fff'
-        }
         conatinerBtns.forEach(btn => {
             btn.style.color = '#fff'
             btn.style.background = '#0206178c';
         });
+        if(button){
+            button.style.background = '#4f46e5';
+            button.style.color = '#fff';
+        }
+        if(button2){
+            button2.style.background = '#9333ea';
+            button2.style.color = '#fff';
+        }
         Ps.forEach(P => {
             P.style.color = '#fff';
         });
@@ -486,6 +493,12 @@ function applyDarkMode(isDark) {
         if(chatP) {
             chatP.style.color = '#c7c6c4';
         }
+        uploadPs.forEach(p => {
+            p.style.color = '#c7c6c4';
+        });
+        if(uploadMainText) {
+            uploadMainText.style.color = '#dfe3e9';
+        }
     } else {
         containers.forEach(container => {
             container.style.background = '#e9edf4';
@@ -493,16 +506,15 @@ function applyDarkMode(isDark) {
         titles.forEach(title => {
             title.style.color = '#1f2937';
         });
-        if(chatContainer){
-            chatContainer.style.background = '#e6e8eb'
-            chatContainer.style.color = '#1f2937'
-        }
         if(deleteLabel) {
             deleteLabel.style.color = '#1f2937';
         }
         if(chatP) {
             chatP.style.color = '#c7c6c4';
         }
+        uploadPs.forEach(p => {
+            p.style.color = '#c7c6c4';
+        });
         labels.forEach(label => {
             if(label.id !== 'deleteLabel') {
                 label.style.color = '#1f2937';
@@ -553,3 +565,43 @@ document.addEventListener('DOMContentLoaded', () => {
     applyDarkMode(isDarkMode);
     document.body.classList.add('dark-mode');
 });
+
+const tabs = document.querySelectorAll('.containerBtn');
+
+const tabContentMap ={
+    "Chat" : 'chat',
+    "Upload" : 'upload',
+    "Flashcards" : 'flashcards',
+    "Quiz" : 'quiz'
+};
+
+function hideAllContents(){
+    for(let key in tabContentMap){
+        const content = document.getElementById(tabContentMap[key]);
+        if(content){
+            content.style.display = 'none';
+        }
+    }
+}
+
+function deactivateAllTabs(){
+    tabs.forEach(tab => tab.classList.remove('active'));
+}
+
+tabs.forEach( tab => {
+    tab.addEventListener('click',() => {
+        deactivateAllTabs();
+        hideAllContents();
+        tab.classList.add('active');
+
+        const contentId = tabContentMap[tab.textContent];
+        const content = document.getElementById(contentId);
+        if(content){
+            content.style.display = 'block';
+        }
+    });
+});
+
+hideAllContents();
+document.getElementById('upload').style.display = 'block';
+tabs[1].classList.add('active');
