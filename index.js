@@ -179,8 +179,16 @@ check2();
 function initSearchableDropdown(inputSelector, menuSelector) {
     const searchInput = document.querySelector(inputSelector);
     const dropdownMenu = document.querySelector(menuSelector);
+
+    if(!dropdownMenu){
+        return;
+    }
+    
     const dropdownItems = dropdownMenu.querySelectorAll('.dropdown-item');
 
+    if(dropdownItems.length === 0){
+        return;
+    }
     searchInput.addEventListener('focus', () => {
         dropdownMenu.classList.add('show');
     });
@@ -278,14 +286,15 @@ function initFont(){
 initSearchableDropdown('#searchInputFont', '#dropdownMenu');
 initFont();
 function applyFont(fontName) {
-    // Apply the font to the body or specific elements
     document.body.style.fontFamily = fontName;
 }
 
 
 function applyDarkMode(isDark) {
-    const containers = document.querySelectorAll('.container3');
+    const containers = document.querySelectorAll('.container3, .container');
+    const aboutSection = document.querySelector('.about');
     const titles = document.querySelectorAll('.title2');
+    const titles1 = document.querySelectorAll('.title')
     const labels = document.querySelectorAll('.container3 label');
     const descriptions = document.querySelectorAll('.container3 .description');
     const nameChange = document.getElementById('nameChange');
@@ -295,36 +304,68 @@ function applyDarkMode(isDark) {
     const dropdownMenu = document.getElementById('dropdownMenu');
     const dropdownItems = document.querySelectorAll('.dropdown-item');
     const searchInputColors = document.getElementById('searchInputColors');
-    
+    const Ps = document.querySelectorAll('p');
+    const descs = document.querySelectorAll('.description');
+    const names = document.querySelectorAll('.name');
+    const items = document.querySelectorAll('.item');
+
     if(isDark) {
         containers.forEach(container => {
             container.style.background = '#0206178c';
             container.style.color = '#ffffff';
         });
+        if(aboutSection){
+            aboutSection.style.backgroundColor = '#0206178c';
+            aboutSection.style.color = '#ffffff'
+
+            const aboutH2 = aboutSection.querySelector('h2');
+            if(aboutH2){
+                aboutH2.style.color = '#fff'
+            }
+        }
         titles.forEach(title => {
-            title.style.color = '#ffffff';
+            title.style.color = '#fff'
         });
+        Ps.forEach(P => {
+            P.style.color = '#fff';
+        });
+        titles1.forEach(title => {
+            title.style.color = '#fff';
+        });
+        descs.forEach(desc => {
+            desc.style.color = '#fff';
+        })
         labels.forEach(label => {
-            label.style.color = '#ffffff';
+            label.style.color = '#fff';
         });
         descriptions.forEach(desc => {
-            desc.style.color = '#ffffff';
+            desc.style.color = '#fff';
+        });
+        names.forEach(name => {
+            name.style.color = '#fff';
+        });
+        items.forEach(item =>{
+            item.style.backgroundColor = '#0E1A4F';
         });
         if(nameChange) {
             nameChange.style.backgroundColor = '#12296f';
             nameChange.style.color = '#ffffff';
+            nameChange.style.border = 'none';
         }
         if(searchInputColors){
             searchInputColors.style.backgroundColor = "#12296f";
             searchInputColors.style.color = "#ffffff";
+            searchInputColors.style.border = 'none';
         }
         if(passwordChange) {
             passwordChange.style.backgroundColor = '#12296f';
             passwordChange.style.color = '#ffffff';
+            passwordChange.style.border = 'none';
         }
         if(searchInputFont) {
             searchInputFont.style.backgroundColor = '#12296f';
             searchInputFont.style.color = '#ffffff';
+            searchInputFont.style.border = 'none';
         }
         if(dropdownMenu) {
             dropdownMenu.style.backgroundColor = '#12296f';
@@ -332,6 +373,7 @@ function applyDarkMode(isDark) {
         dropdownItems.forEach(item => {
             item.style.color = '#ffffff';
             item.style.backgroundColor = '#12296f';
+            item.classList.add('dark-mode');
         });
     } else {
         containers.forEach(container => {
@@ -354,19 +396,24 @@ function applyDarkMode(isDark) {
         descriptions.forEach(desc => {
             desc.style.color = '#4b5563';
         });
+        dropdownItems.forEach(item => {
+            item.style.color = '#1f2937';
+            item.style.backgroundColor = '#e6e8eb';
+            item.classList.remove('dark-mode');
+        });
         if(nameChange) {
             nameChange.style.backgroundColor = '#e6e8eb';
             nameChange.style.color = '#1f2937';
-            nameChange.style.borderColor = '#525b6e';
+            nameChange.style.border = '1px solid #aaaaaa';
         }
         if(passwordChange) {
             passwordChange.style.backgroundColor = '#e6e8eb';
             passwordChange.style.color = '#1f2937';
-            passwordChange.style.borderColor = '#525b6e';
+            passwordChange.style.border = '1px solid #aaaaaa';
         }
         if(searchInputFont) {
             searchInputFont.style.backgroundColor = '#e6e8eb';
-            searchInputFont.style.borderColor = '#525b6e';
+            searchInputFont.style.border = '1px solid #aaaaaa';
             searchInputFont.style.color = '#1f2937';
         }
         if(dropdownMenu) {
@@ -375,12 +422,14 @@ function applyDarkMode(isDark) {
         if(searchInputColors){
             searchInputColors.style.backgroundColor = "#e6e8eb";
             searchInputColors.style.color = "#1f2937";
+            searchInputColors.style.border = '1px solid #aaaaaa';
         }
-        dropdownItems.forEach(item => {
-            item.style.color = '#1f2937';
-            item.style.backgroundColor = '#e6e8eb';
-        });
     }
 }
 
 initDarkMode();
+
+document.addEventListener('DOMContentLoaded', () => {
+    const isDarkMode = localStorage.getItem('darkMode') !== 'false';
+    applyDarkMode(isDarkMode);
+});
