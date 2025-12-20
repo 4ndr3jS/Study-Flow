@@ -406,7 +406,7 @@ function applyAccentToElements(elements) {
 
 
 function applyDarkMode(isDark) {
-    const containers = document.querySelectorAll('.container3, .container, .chatContainer');
+    const containers = document.querySelectorAll('.container3, .container, .chatContainer, .sideContainer');
     const aboutSection = document.querySelector('.about');
     const titles = document.querySelectorAll('.title2');
     const titles1 = document.querySelectorAll('.title')
@@ -787,41 +787,63 @@ const sendBtn = document.getElementById("send");
 const chatBox = document.querySelector(".chatBox");
 const chatIntro = document.getElementById("chatP");
 
+
+// Store conversation history
+let conversationHistory = [];
+
 async function askFlashy(message) {
     try {
-        const res = await fetch("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-0.5B-Instruct", {
+        // Add user message to history
+        conversationHistory.push({
+            role: 'user',
+            content: message
+        });
+
+        const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${window.CONFIG.HF_TOKEN}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                inputs: message,
-                parameters: {
-                    max_new_tokens: 250,
-                    temperature: 0.7,
-                    return_full_text: false
-                }
+                message: message,
+                history: conversationHistory  // Send full history
             })
         });
 
-        const data = await res.json();
+        const textResponse = await res.text();
+        console.log("Raw response:", textResponse);
+
+        const data = JSON.parse(textResponse);
 
         if(data.error) {
-            console.error("HF API Error:", data.error);
+            console.error("API Error:", data.error);
             return "Sorry, I couldn't get a response. Error: " + data.error;
         }
 
-        if(data[0]?.generated_text){
-            return data[0].generated_text;
-        } else {
-            console.log("Unexpected response:", data);
-            return "Sorry, I couldn't get a response.";
+        // Add assistant response to history
+        conversationHistory.push({
+            role: 'assistant',
+            content: data.response
+        });
+
+        // Keep only last 10 messages to avoid hitting token limits
+        if(conversationHistory.length > 20) {
+            conversationHistory = conversationHistory.slice(-20);
         }
+
+        return data.response || "Sorry, I couldn't get a response.";
+        
     } catch(error) {
         console.error("Fetch error:", error);
-        return "Sorry, there was a network error.";
+        return "Sorry, there was a network error: " + error.message;
     }
+}
+
+function formatMessage(text) {
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    text = text.replace(/\n/g, '<br>');
+    return text;
 }
 
 async function sendMessage() {
@@ -860,10 +882,9 @@ async function sendMessage() {
     const botReply = await askFlashy(message);
 
     clearInterval(interval);
-    typingDiv.textContent = "Flashy: " + botReply;
+    typingDiv.innerHTML = "Flashy: " + formatMessage(botReply);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
-
 
 sendBtn.addEventListener("click", sendMessage);
 
