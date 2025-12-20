@@ -670,6 +670,62 @@ body.dark-mode .nameInput::placeholder {
     border: 1px dashed #e6e8eb8c;
     border-bottom: 1px solid #e6e8eb8c;
     border-radius: 16px;
+    transition: 0.2s ease;
+}
+
+.chatBox:hover{
+    border-color: #9ca3af;
+    background-color: #071236;
+    cursor: pointer;
+}
+
+.chatBox:active{
+    background-color: #050d29;
+}
+
+.chatBox.dragover{
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+}
+
+.nameFile{
+    margin: 0;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+}
+
+.fileSize{
+    margin: 0;
+    margin-top: 4px;
+    font-size: 12px;
+    font-weight: 400;
+    color: #6b7280;
+}
+
+.uploadedFileItem{
+    display: flex;
+    align-items: center;
+    background-color:  rgb(204, 205, 207);
+    border-radius: 8px;
+    min-height: 60px;
+    padding-right: 16px;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.remove{
+    cursor: pointer;
+    padding: 8px;
+    transition: opacity 0.2s;
+}
+
+#fileInput{
+    display: none;
+}
+
+.uploadedFilesContainer{
+    margin-top: 20px;
 }
 
 .send1{
@@ -747,7 +803,7 @@ body.dark-mode .nameInput::placeholder {
     margin: 0;
 }
 .button {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     height: 66px;
     width: 348px;
@@ -760,7 +816,7 @@ body.dark-mode .nameInput::placeholder {
 }
 
 .button2 {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 600;
     height: 66px;
     width: 348px;
@@ -776,3 +832,4 @@ body.dark-mode .nameInput::placeholder {
     align-items: center;
     justify-content: center;
 }
+
