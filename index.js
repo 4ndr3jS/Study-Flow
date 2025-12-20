@@ -785,37 +785,88 @@ function switchTab2(){
 const chatInput = document.querySelector(".chatInput");
 const sendBtn = document.getElementById("send");
 const chatBox = document.querySelector(".chatBox");
+const chatIntro = document.getElementById("chatP");
 
 async function askFlashy(message) {
-    const res = await fetch("https://router.huggingface.co/v1/chat/completions", {
-        method: "POST",
-        headers: {
-            "Authorization": `Bearer ${window.CONFIG.HF_TOKEN}`,
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            model: window.CONFIG.MODEL,
-            messages: [
-                {
-                    role: "system",
-                    content: "You are Flashy, a friendly AI study assistant."
-                },
-                {
-                    role: "user",
-                    content: message
+    try {
+        const res = await fetch("https://api-inference.huggingface.co/models/Qwen/Qwen2.5-0.5B-Instruct", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${window.CONFIG.HF_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                inputs: message,
+                parameters: {
+                    max_new_tokens: 250,
+                    temperature: 0.7,
+                    return_full_text: false
                 }
-            ]
-        })
-    });
+            })
+        });
 
-    const data = await res.json();
+        const data = await res.json();
 
-    if(data.choices && data.choices[0]?.message?.content){
-        return data.choices[0].message.content;
-    } else if(data.error) {
-        console.error("HF API Error:", data.error);
-        return "Sorry, I couldn't get a response.";
-    } else {
-        return "Sorry, I couldn't get a response.";
+        if(data.error) {
+            console.error("HF API Error:", data.error);
+            return "Sorry, I couldn't get a response. Error: " + data.error;
+        }
+
+        if(data[0]?.generated_text){
+            return data[0].generated_text;
+        } else {
+            console.log("Unexpected response:", data);
+            return "Sorry, I couldn't get a response.";
+        }
+    } catch(error) {
+        console.error("Fetch error:", error);
+        return "Sorry, there was a network error.";
     }
 }
+
+async function sendMessage() {
+    const message = chatInput.value.trim();
+    const intro = document.querySelector('.intro');
+    if (!message){
+        return;
+    }
+    if(chatIntro) {
+        chatIntro.style.display = "none";
+    }
+    if(intro) {
+        intro.style.display = "none";
+    }
+
+    const userDiv = document.createElement("p");
+    userDiv.textContent = message;
+    userDiv.classList.add("userMessage");
+    chatBox.appendChild(userDiv);
+
+    chatInput.value = "";
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const typingDiv = document.createElement("p");
+    typingDiv.textContent = "Flashy is typing";
+    typingDiv.classList.add("botMessage", "typing");
+    chatBox.appendChild(typingDiv);
+
+    let dots = 0;
+    const interval = setInterval(() => {
+        dots = (dots + 1) % 4;
+        typingDiv.textContent = "Flashy is typing" + ".".repeat(dots);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }, 500);
+
+    const botReply = await askFlashy(message);
+
+    clearInterval(interval);
+    typingDiv.textContent = "Flashy: " + botReply;
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+
+sendBtn.addEventListener("click", sendMessage);
+
+chatInput.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") sendMessage();
+});
