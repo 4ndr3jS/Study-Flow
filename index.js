@@ -429,6 +429,7 @@ function applyDarkMode(isDark) {
     const uploadMainText = document.getElementById('uploadMainText');
     const button = document.querySelector('.button');
     const button2 = document.querySelector('.button2');
+    const listF = document.getElementById('listF');
 
     if(isDark) {
         containers.forEach(container => {
@@ -451,6 +452,9 @@ function applyDarkMode(isDark) {
             btn.style.color = '#fff'
             btn.style.background = '#0206178c';
         });
+        if(listF){
+            listF.style.color = '#fff';
+        }
         if(button){
             button.style.background = '#4f46e5';
             button.style.color = '#fff';
@@ -511,6 +515,9 @@ function applyDarkMode(isDark) {
         }
         if(chatP) {
             chatP.style.color = '#c7c6c4';
+        }
+        if(listF){
+            listF.style.color = '#1f2937';
         }
         uploadPs.forEach(p => {
             p.style.color = '#c7c6c4';
@@ -598,6 +605,7 @@ tabs.forEach( tab => {
         const content = document.getElementById(contentId);
         if(content){
             content.style.display = 'block';
+            displayFlashcardFiles();
         }
     });
 });
@@ -773,6 +781,7 @@ function switchTab(){
     deactivateAllTabs();
     document.getElementById('flashcards').style.display = 'block';
     tabs[2].classList.add('active');
+    displayFlashcardFiles();
 }
 
 function switchTab2(){
@@ -788,12 +797,10 @@ const chatBox = document.querySelector(".chatBox");
 const chatIntro = document.getElementById("chatP");
 
 
-// Store conversation history
 let conversationHistory = [];
 
 async function askFlashy(message) {
     try {
-        // Add user message to history
         conversationHistory.push({
             role: 'user',
             content: message
@@ -806,7 +813,7 @@ async function askFlashy(message) {
             },
             body: JSON.stringify({
                 message: message,
-                history: conversationHistory  // Send full history
+                history: conversationHistory
             })
         });
 
@@ -820,13 +827,11 @@ async function askFlashy(message) {
             return "Sorry, I couldn't get a response. Error: " + data.error;
         }
 
-        // Add assistant response to history
         conversationHistory.push({
             role: 'assistant',
             content: data.response
         });
 
-        // Keep only last 10 messages to avoid hitting token limits
         if(conversationHistory.length > 20) {
             conversationHistory = conversationHistory.slice(-20);
         }
@@ -891,3 +896,64 @@ sendBtn.addEventListener("click", sendMessage);
 chatInput.addEventListener("keydown", (e) => {
     if(e.key === "Enter") sendMessage();
 });
+
+function displayFlashcardFiles() {
+    const sideContainer = document.querySelector('#flashcards .sideContainer');
+    
+    if (!sideContainer) return;
+    
+    sideContainer.innerHTML = `
+        <div style="flex: 1;">
+            <h3 style="margin: 0; margin-bottom: 20px;">Files List</h3>
+            <div id="flashcardFilesList"></div>
+        </div>
+        <div class="buttons2" style="margin-top: auto;">
+            <button class="button generateFlashcardsBtn" style="align-items: center; background-color: #4f46e5; color: white; width: 100%;">
+                <img src="imgs/brain.png" height="30" width="30">Generate Flashcards
+            </button>
+        </div>
+    `;
+    
+    const filesList = document.getElementById('flashcardFilesList');
+    
+    if (uploadedFiles.length === 0) {
+        filesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">No files uploaded yet</p>';
+        return;
+    }
+    
+    uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.style.cssText = 'padding: 12px; background: white; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 2px solid transparent; transition: border 0.2s;';
+        fileItem.className = 'flashcard-file-item';
+        
+        fileItem.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" class="custom-checkbox" checked  data-index="${index}">
+                <div style="flex: 1;">
+                    <p style="margin: 0; font-size: 14px; font-weight: 500; color: #1f2937;">${file.name}</p>
+                    <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 4px;">${formatFileSize(file.size)}</p>
+                </div>
+            </div>
+        `;
+        
+        filesList.appendChild(fileItem);
+    });
+    
+    const generateBtn = sideContainer.querySelector('.generateFlashcardsBtn');
+    generateBtn.addEventListener('click', generateFlashcards);
+}
+
+function generateFlashcards() {
+    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+    
+    if (checkboxes.length === 0) {
+        alert('Please select at least one file to generate flashcards');
+        return;
+    }
+    
+    const selectedFiles = Array.from(checkboxes).map(cb => uploadedFiles[parseInt(cb.dataset.index)]);
+    
+    console.log('Generating flashcards for:', selectedFiles);
+
+    alert(`Generating flashcards for ${selectedFiles.length} file(s)!`);
+}
