@@ -883,8 +883,34 @@ body.dark-mode .nameInput::placeholder {
     margin-left: 10px;
     background: transparent;
     color: white;
-    font-weight: 500;
     padding: 6px 10px;
     border-radius: 10px;
     max-width: 80%;
+}
+
+
+.flashcardsSection {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 20px;
+    align-items: flex-start;
+    width: calc(100% - 364px);
+    margin-left: 182px;
+    margin-top: 20px;
+}
+
+.sideContainer {
+    background-color: rgba(241, 245, 249, 0.96);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    padding: 40px;
+    width: 350px;
+    min-height: 500px;
+    flex-shrink: 0;
+}
+
+.flashcardsSection .chatContainer {
+    flex: 1;
+    margin-bottom: 50px;
 }
