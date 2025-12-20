@@ -984,8 +984,9 @@ body.dark-mode .nameInput::placeholder {
 
 .flashcard-back{
     position: absolute;
-    width: 100%;
-    height: 100%;
+    width: 89%;
+    height: 79%;
+    border-radius: 20px;
     backface-visibility: hidden;
     transform: rotateY(180deg);
     display: flex;
@@ -996,26 +997,35 @@ body.dark-mode .nameInput::placeholder {
     background: #f9fafb;
 }
 
-.button #revCard{
+
+.prevCard{
+    height: 54px;
+    width: 280px;
+    font-size: 17px;
     padding: 12px 24px;
-    background: #e5e7eb;
+    background-color: white;
     color: #1f2937;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
     font-weight: 500;
-    transition: background 0.2s;
+    transition: background 0.2s ease;
+    align-items: center;
+    margin-right: 15px;
 }
 
-.button #nextCard{
+.nextCard{
+    height: 54px;
+    font-size: 17px;
+    width: 280px;
     padding: 12px 24px;
     background: #4f46e5;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 14px;
     font-weight: 500;
-    transition: background 0.2s;
+    transition: background 0.2s ease;
+    align-items: center;
+    margin-left: 15px;
 }
