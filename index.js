@@ -672,59 +672,6 @@ async function handleFiles(files){
     displayUploadedFiles();
 }
 
-function displayUploadedFiles(){
-    if(uploadedFiles.length === 0){
-        uploadedFilesContainer.style.display = 'none';
-        return;
-    }
-    uploadedFilesContainer.style.display = 'block';
-    filesList.innerHTML = '';
-
-    uploadedFiles.forEach((file, index) => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'uploadedFileItem';
-        fileItem.innerHTML = `
-            <div style="display: flex; align-items: center;">
-                <div class="img" style="display: flex; align-self: center; padding-left: 8px; padding-right: 8px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30" fill="none">
-                        <rect x="5" y="2" width="14" height="20" rx="2" stroke="#6b7280" stroke-width="2" fill="none"/>
-                        <path d="M13 2V8H19" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        <line x1="8" y1="12" x2="16" y2="12" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
-                        <line x1="8" y1="16" x2="16" y2="16" stroke="#6b7280" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                </div>
-                <div class="itemDisplay">
-                    <h3 class="nameFile">
-                        ${index + 1}. ${file.name}
-                    </h3>
-                    <h5 class="fileSize">
-                        ${formatFileSize(file.size)}
-                    </h5>
-                </div>
-            </div>
-            <div class="remove" onclick="removeFile(${index})">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14" fill="#6b7280">
-                    <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
-                </svg>
-            </div>
-        `;
-        filesList.appendChild(fileItem);
-    });
-
-    const buttonsDiv = document.createElement('div');
-    buttonsDiv.className = 'btns';
-    buttonsDiv.style.cssText = 'justify-self: center; justify-content: space-between; margin-top: 26px; width: 80%; display: flex;';
-    buttonsDiv.innerHTML = `
-        <div class="buttons2">
-            <button class="button" style="align-items: center;"><img src="brain.png" height="30" width="30">Generate Flashcards</button>
-        </div>
-        <div class="buttons2">
-            <button class="button2"><img src="book.png" height="30" width="30">Generate Quiz</button>
-        </div>
-    `;
-    filesList.appendChild(buttonsDiv);
-}
-
 async function removeFile(index){
     const file = uploadedFiles[index];
     
@@ -808,13 +755,19 @@ function displayUploadedFiles(){
     buttonsDiv.style.cssText = 'justify-self: center; justify-content: space-between; margin-top: 26px; width: 80%; display: flex;';
     buttonsDiv.innerHTML = `
         <div class="buttons2">
-            <button class="button" style="align-items: center; background-color: #4f46e5; color: white;"><img src="imgs/brain.png" height="30" width="30">Generate Flashcards</button>
+            <button class="button flashcardsBtn" style="align-items: center; background-color: #4f46e5; color: white;"><img src="imgs/brain.png" height="30" width="30">Generate Flashcards</button>
         </div>
         <div class="buttons2">
-            <button class="button2" style="background-color: #9333ea; color: white;"><img src="imgs/book.png" height="30" width="30">Generate Quiz</button>
+            <button class="button2 quizBtn" style="background-color: #9333ea; color: white;"><img src="imgs/book.png" height="30" width="30">Generate Quiz</button>
         </div>
     `;
     filesList.appendChild(buttonsDiv);
+
+    const flashcardsBtn = buttonsDiv.querySelector('.flashcardsBtn');
+    const quizBtn = buttonsDiv.querySelector('.quizBtn');
+    
+    flashcardsBtn.addEventListener('click', switchTab);
+    quizBtn.addEventListener('click', switchTab2);
 }
 
 async function removeFile(index){
@@ -845,4 +798,18 @@ async function removeFile(index){
     }
     uploadedFiles.splice(index, 1);
     displayUploadedFiles();
+}
+
+function switchTab(){
+    hideAllContents();
+    deactivateAllTabs();
+    document.getElementById('flashcards').style.display = 'block';
+    tabs[2].classList.add('active');
+}
+
+function switchTab2(){
+    hideAllContents();
+    deactivateAllTabs();
+    document.getElementById('quiz').style.display = 'block';
+    tabs[3].classList.add('active');
 }
