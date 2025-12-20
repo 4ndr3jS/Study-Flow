@@ -678,19 +678,12 @@ async function handleFiles(files){
         }
     }
     displayUploadedFiles();
+    displayFlashcardFiles()
 }
 
 window.addEventListener('DOMContentLoaded', () => {
     initializeUserFiles();
 });
-
-function formatFileSize(bytes) {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-}
 
 function displayUploadedFiles(){
     if(uploadedFiles.length === 0){
@@ -897,11 +890,16 @@ chatInput.addEventListener("keydown", (e) => {
     if(e.key === "Enter") sendMessage();
 });
 
+let generatedFlashcards = [];
+let currentCardIndex = 0;
+
 function displayFlashcardFiles() {
     const sideContainer = document.querySelector('#flashcards .sideContainer');
     
-    if (!sideContainer) return;
-    
+    if (!sideContainer){
+        return;
+    }
+
     sideContainer.innerHTML = `
         <div style="flex: 1;">
             <h3 style="margin: 0; margin-bottom: 20px;">Files List</h3>
@@ -928,7 +926,7 @@ function displayFlashcardFiles() {
         
         fileItem.innerHTML = `
             <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" class="custom-checkbox" checked  data-index="${index}">
+                <input type="checkbox" class="file-checkbox" checked data-index="${index}">
                 <div style="flex: 1;">
                     <p style="margin: 0; font-size: 14px; font-weight: 500; color: #1f2937;">${file.name}</p>
                     <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 4px;">${formatFileSize(file.size)}</p>
@@ -943,17 +941,261 @@ function displayFlashcardFiles() {
     generateBtn.addEventListener('click', generateFlashcards);
 }
 
-function generateFlashcards() {
+async function generateFlashcards() {
     const checkboxes = document.querySelectorAll('.file-checkbox:checked');
     
     if (checkboxes.length === 0) {
         alert('Please select at least one file to generate flashcards');
         return;
     }
-    
+
     const selectedFiles = Array.from(checkboxes).map(cb => uploadedFiles[parseInt(cb.dataset.index)]);
     
-    console.log('Generating flashcards for:', selectedFiles);
+    console.log('Selected files:', selectedFiles);
 
-    alert(`Generating flashcards for ${selectedFiles.length} file(s)!`);
+    const flashcardContainer = document.querySelector('#flashcards .chatContainer');
+    flashcardContainer.innerHTML = `
+        <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 20px; color: #6b7280;">Generating flashcards...</p>
+            </div>
+        </div>
+    `;
+    
+    try {
+        let combinedContent = '';
+        for (const file of selectedFiles) {
+            console.log('Reading file:', file);
+            
+            let content;
+            
+            // Check if it's a File object (newly uploaded) or database record
+            if (file instanceof File || file instanceof Blob) {
+                // Read directly from File object
+                content = await readFileContent(file);
+            } else if (file.fromDatabase && file.path) {
+                // Download from Supabase storage
+                content = await downloadFileFromSupabase(file.path);
+            } else {
+                throw new Error(`Unable to read file: ${file.name || 'unknown'}`);
+            }
+            
+            combinedContent += `\n\n--- Content from ${file.name} ---\n\n${content}`;
+        }
+        
+        const prompt = `TASK: Generate flashcards as JSON array ONLY.
+
+DO NOT greet me. DO NOT explain. DO NOT add any text before or after the JSON.
+Your ENTIRE response must be ONLY valid JSON array starting with [ and ending with ].
+
+Content to create flashcards from:
+${combinedContent.substring(0, 15000)}
+
+FORMAT (respond with ONLY this, nothing else):
+[{"front":"question","back":"answer"},{"front":"question","back":"answer"}]
+
+Generate 8-12 flashcards now:`;
+
+        const requestBody = {
+            message: prompt,
+            history: [],
+            mode: "flashcard_generation"
+        };
+        
+        console.log("=== SENDING TO API ===");
+        console.log(JSON.stringify(requestBody, null, 2));
+
+        const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        const textResponse = await res.text();
+        console.log("Raw response:", textResponse);
+
+        const data = JSON.parse(textResponse);
+
+        if(data.error){
+            throw new Error(data.error);
+        }
+
+        const aiResponse = data.response || "";
+        
+        console.log("=== AI RESPONSE START ===");
+        console.log(aiResponse);
+        console.log("=== AI RESPONSE END ===");
+
+        let jsonString = aiResponse;
+        
+        jsonString = jsonString.replace(/```json\s*/g, "").replace(/```\s*/g, "");
+        
+        const arrayMatch = jsonString.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+            jsonString = arrayMatch[0];
+        }
+        
+        console.log("=== EXTRACTED JSON START ===");
+        console.log(jsonString);
+        console.log("=== EXTRACTED JSON END ===");
+        
+        if (!jsonString.trim().startsWith('[')) {
+            throw new Error(`AI did not return flashcards. Response was: "${aiResponse.substring(0, 100)}..."`);
+        }
+        
+        generatedFlashcards = JSON.parse(jsonString);
+        
+        if (!Array.isArray(generatedFlashcards) || generatedFlashcards.length === 0) {
+            throw new Error('No flashcards were generated');
+        }
+        
+        currentCardIndex = 0;
+
+        displayFlashcardViewer();
+    } catch(error){
+        console.error('Error generating flashcards:', error);
+        flashcardContainer.innerHTML = `
+            <div class="chatBox">
+                <p style="text-align: center; color: #ef4444; padding: 20px;">
+                    Error generating flashcards: ${error.message}<br>
+                    Please try again.
+                </p>
+            </div>
+        `;
+    }
 }
+
+async function readFileContent(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+    });
+}
+
+async function downloadFileFromSupabase(filePath) {
+    try {
+        const { data, error } = await supabase.storage
+            .from('documents')
+            .download(filePath);
+        
+        if (error) {
+            console.error('Error downloading file:', error);
+            throw new Error(`Failed to download file: ${error.message}`);
+        }
+        
+        // Convert blob to text
+        const text = await data.text();
+        return text;
+    } catch (error) {
+        console.error('Download error:', error);
+        throw error;
+    }
+}
+
+function displayFlashcardViewer(){
+    const flashcardContainer = document.querySelector('#flashcards .chatContainer');
+
+    if(generatedFlashcards.length === 0){
+        flashcardContainer.innerHTML = `
+            <div class="chatBox">
+                <p style="text-align: center; padding: 20px;">No flashcards generated</p>
+            </div>
+        `;
+        return;
+    }
+
+    flashcardContainer.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; padding: 40px; width: 100%;">
+            <div style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+                Card ${currentCardIndex + 1} of ${generatedFlashcards.length}
+            </div>
+            
+            <div class="flashcard" id="flashcard">
+                <div class="flashcard-front">
+                    <div>
+                        <p style="font-size: 18px; line-height: 1.6; color: #1f2937; margin: 0;">
+                            ${generatedFlashcards[currentCardIndex].front}
+                        </p>
+                        <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">Click to reveal answer</p>
+                    </div>
+                </div>
+                
+                <div class="flashcard-back">
+                    <div>
+                        <p style="font-size: 16px; line-height: 1.6; color: #1f2937; margin: 0;">
+                            ${generatedFlashcards[currentCardIndex].back}
+                        </p>
+                        <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">Click to see question</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="buttons2" style="margin-top: 30px;">
+                <button id="prevCard" class="button" ${currentCardIndex === 0 ? 'disabled' : ''}>
+                    ← Previous
+                </button>
+                
+                <button id="nextCard" class="button" ${currentCardIndex === generatedFlashcards.length - 1 ? 'disabled' : ''}>
+                    Next →
+                </button>
+            </div>
+        </div>
+    `;
+    
+    const flashcard = document.getElementById('flashcard');
+    let isFlipped = false;
+
+    flashcard.addEventListener('click', () => {
+        isFlipped = !isFlipped;
+        flashcard.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+    });
+
+    document.getElementById('prevCard').addEventListener('click', () => {
+        if(currentCardIndex > 0){
+            currentCardIndex--;
+            displayFlashcardViewer();
+        }
+    });
+
+    document.getElementById('nextCard').addEventListener('click', () => {
+        if(currentCardIndex < generatedFlashcards.length - 1){
+            currentCardIndex++;
+            displayFlashcardViewer();
+        }
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #prevCard:disabled, #nextCard:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    #prevCard:not(:disabled):hover {
+        background: #d1d5db !important;
+    }
+
+    #nextCard:not(:disabled):hover {
+        background: #4338ca !important;
+    }
+`;
+document.head.appendChild(style);
