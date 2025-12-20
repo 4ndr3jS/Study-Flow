@@ -36,7 +36,7 @@
         <div class="chatBox">
             <div class="intro">
                 <p id="chatP" style="text-align: center;">This is Flashy<br><br>
-                    <img src="bot.png" alt="" style="height: 90px; width: auto; opacity: 0.5; padding-left: 10px;"><br><br>
+                    <img src="imgs/bot.png" alt="" style="height: 90px; width: auto; opacity: 0.5; padding-left: 12px; padding-bottom: 10px;"><br>
                     Ask him anything you want, he'll respond right away!</p>
             </div>
         </div>
@@ -51,45 +51,45 @@
             />
         </form>
             <button id="send" class="send1">
-                <img src="send.png" class="send" style="display: none;">
-                <img src="send2.png" class="send" style="display: block;">
+                <img src="imgs/send.png" class="send" style="display: none;">
+                <img src="imgs/send2.png" class="send" style="display: block;">
             </button>
         </div>
     </div>
 
-    <div class="chatContainer" id="upload" style="min-height: 260px;">
-        <div class="chatBox" id="uploadBox" style="min-height: 260px;">
-            <div style="display: grid; height: 100px; justify-content: center; margin-top: 45px;">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="45" height="45" style="justify-self: center;">
-                    <path d="M256 64 L160 160 Q150 170 160 180 Q170 190 180 180 L240 120 L240 360 Q240 380 256 380 Q272 380 272 360 L272 120 L332 180 Q342 190 352 180 Q362 170 352 160 Z" 
-                            fill="#9ca3af" 
-                            stroke="#9ca3af" 
-                            stroke-width="20" 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round"/>
-                    <path d="M30 350 Q32 368 32 384 L32 448 Q32 464 48 464 L464 464 Q480 464 480 448 L480 384 Q480 368 480 350" 
-                            fill="none" 
-                            stroke="#9ca3af" 
-                            stroke-width="32" 
-                            stroke-linecap="round" 
-                            stroke-linejoin="round"/>
-                </svg>
-                <p id="uploadMainText" style="margin: 0; text-align: center; margin-top: 20px; font-size: 18px;">Click to upload documents</p>
-                <p style="margin: 0; text-align: center; margin-top: 12px;">PDF, TXT, DOC, DOCX</p>
+    <div id="upload">
+        <div class="chatContainer" id="upload" style="min-height: 260px;">
+            <div class="chatBox2" id="uploadBox" style="min-height: 260px;">
+                <div style="display: grid; height: 100px; justify-content: center; margin-top: 45px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="45" height="45" style="justify-self: center;">
+                        <path d="M256 64 L160 160 Q150 170 160 180 Q170 190 180 180 L240 120 L240 360 Q240 380 256 380 Q272 380 272 360 L272 120 L332 180 Q342 190 352 180 Q362 170 352 160 Z" 
+                                fill="#9ca3af" 
+                                stroke="#9ca3af" 
+                                stroke-width="20" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"/>
+                        <path d="M30 350 Q32 368 32 384 L32 448 Q32 464 48 464 L464 464 Q480 464 480 448 L480 384 Q480 368 480 350" 
+                                fill="none" 
+                                stroke="#9ca3af" 
+                                stroke-width="32" 
+                                stroke-linecap="round" 
+                                stroke-linejoin="round"/>
+                    </svg>
+                    <p id="uploadMainText" style="margin: 0; text-align: center; margin-top: 20px; font-size: 18px;">Click to upload documents</p>
+                    <p style="margin: 0; text-align: center; margin-top: 12px;">PDF, TXT, DOC, DOCX</p>
+                </div>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx" multiple>
+
+        <div class="uploadedFilesContainer" id="uploadedFilesContainer" style="display: none;">
+            <div class="chatContainer" style="min-height: 60px; align-items: center;">
+                <h3 style="margin: 0; font-weight: 500; font-size: 16px; padding-left: 10px; margin-bottom: 16px;">Uploaded files:</h3>
+                <div id="filesList"></div>
             </div>
         </div>
     </div>
-
-    <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx" multiple>
-
-    <div class="uploadedFilesContainer" id="uploadedFilesContainer" style="display: none;">
-        <div class="chatContainer" style="min-height: 60px; align-items: center;">
-            <h3 style="margin: 0; font-weight: 500; font-size: 16px; padding-left: 10px; margin-bottom: 16px;">Uploaded files:</h3>
-            <div id="filesList"></div>
-        </div>
-    </div>
-
-    <input type="file" id="fileInput" accept=".pdf,.txt,.doc,.docx" multiple>
 
     <div id="authModal" style="display: none;">
         <div class="modalForm">
