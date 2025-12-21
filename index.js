@@ -1366,3 +1366,154 @@ function displayQuizFiles() {
     
     document.querySelector('.generateQuizBtn').addEventListener('click', generateQuiz);
 }
+
+async function generateQuizForSingleFile(content, fileName) {
+    const sanitizedContent = content.substring(0, 12000).trim();
+    
+    const prompt = `You are a quiz generator. Generate quiz questions from the following content.
+
+CRITICAL INSTRUCTIONS:
+1. Keep questions in the SAME LANGUAGE as the source content
+2. Generate EXACTLY 16 questions
+3. Each question should be open-ended (not multiple choice)
+4. Return ONLY a valid JSON array - no greetings, no explanations, no markdown
+5. Your response must start with [ and end with ]
+
+Content from ${fileName}:
+${sanitizedContent}
+
+Generate exactly 16 quiz questions in this JSON format:
+[{"question":"What is...?","correctAnswer":"The answer"}]`;
+
+    const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify({
+            message: prompt,
+            history: [],
+            mode: "quiz_generation"
+        })
+    });
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        if (errorText.includes('Rate limit')) {
+            throw new Error('API rate limit reached. Please wait and try again.');
+        }
+        throw new Error(`API request failed: ${res.status}`);
+    }
+
+    const data = JSON.parse(await res.text());
+    if (data.error) throw new Error(data.error);
+
+    let aiResponse = data.response || "";
+    aiResponse = aiResponse.replace(/\\\\u([0-9a-fA-F]{4})/g, '\\u$1');
+    
+    let cleanedResponse = aiResponse.replace(/```json|```/g, "").trim();
+    const startIdx = cleanedResponse.indexOf('[');
+    const endIdx = cleanedResponse.lastIndexOf(']');
+    
+    if (startIdx !== -1 && endIdx !== -1) {
+        cleanedResponse = cleanedResponse.substring(startIdx, endIdx + 1);
+    }
+    
+    const questions = JSON.parse(cleanedResponse);
+    if (!Array.isArray(questions) || questions.length === 0) {
+        throw new Error('No questions were generated');
+    }
+    
+    if (questions.length < 16) {
+        throw new Error(`Only ${questions.length} questions generated, need 16`);
+    }
+    
+    return questions.slice(0, 16);
+}
+
+async function generateQuiz() {
+    const selectedRadio = document.querySelector('.quiz-file-radio:checked');
+    if (!selectedRadio) {
+        alert('Please select a file to generate quiz');
+        return;
+    }
+
+    const selectedFile = uploadedFiles[parseInt(selectedRadio.dataset.index)];
+    const fileId = selectedFile.id || selectedFile.name;
+    const fileName = selectedFile.name;
+    
+    const quizContainer = document.querySelector('#quiz .chatContainer');
+
+    quizContainer.innerHTML = `
+        <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center;">
+                <div style="border: 4px solid #f3f4f6; border-top: 4px solid #9333ea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 20px; color: #6b7280;">Checking for existing quiz...</p>
+            </div>
+        </div>
+    `;
+    
+    try {
+        const existingQuiz = await getExistingQuiz([fileId]);
+        
+        if (existingQuiz && existingQuiz.length > 0) {
+            generatedQuiz = existingQuiz;
+            currentQuestionIndex = 0;
+            userAnswers = new Array(16).fill('');
+            displayQuizQuestion();
+            showNotification('✓ Loaded saved quiz', '#9333ea');
+            return;
+        }
+
+        quizContainer.innerHTML = `
+            <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #f3f4f6; border-top: 4px solid #9333ea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    <p style="margin-top: 20px; color: #6b7280;">Extracting text from file...</p>
+                </div>
+            </div>
+        `;
+        
+        let content;
+        if (selectedFile instanceof File || selectedFile instanceof Blob) {
+            content = await readFileContent(selectedFile);
+        } else if (selectedFile.fromDatabase && selectedFile.path) {
+            content = await downloadFileFromSupabase(selectedFile.path);
+        } else {
+            throw new Error('Unable to read file');
+        }
+        
+        if (!content || content.trim().length === 0) {
+            throw new Error('No text could be extracted from the file');
+        }
+        
+        content = content.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim();
+        
+        quizContainer.innerHTML = `
+            <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #f3f4f6; border-top: 4px solid #9333ea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    <p style="margin-top: 20px; color: #6b7280;">Generating 16 quiz questions...</p>
+                </div>
+            </div>
+        `;
+        
+        generatedQuiz = await generateQuizForSingleFile(content, fileName);
+        
+        await saveQuizToSupabase([fileId], [fileName], generatedQuiz);
+        
+        currentQuestionIndex = 0;
+        userAnswers = new Array(16).fill('');
+        displayQuizQuestion();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        quizContainer.innerHTML = `
+            <div class="chatBox">
+                <p style="text-align: center; color: #ef4444; padding: 20px;">
+                    Error: ${error.message}<br><br>
+                    Please try again.
+                </p>
+            </div>
+        `;
+    }
+}
+
