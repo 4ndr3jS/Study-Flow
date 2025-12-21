@@ -961,44 +961,78 @@ async function generateFlashcards() {
         <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
             <div style="text-align: center;">
                 <div style="border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-                <p style="margin-top: 20px; color: #6b7280;">Generating flashcards...</p>
+                <p style="margin-top: 20px; color: #6b7280;">Extracting text from files...</p>
             </div>
         </div>
     `;
     
     try {
         let combinedContent = '';
+        
         for (const file of selectedFiles) {
-            console.log('Reading file:', file);
+            console.log('Processing file:', file.name);
             
-            let content;
-            
-            if (file instanceof File || file instanceof Blob) {
-                content = await readFileContent(file);
-            } else if (file.fromDatabase && file.path) {
-                content = await downloadFileFromSupabase(file.path);
-            } else {
-                throw new Error(`Unable to read file: ${file.name || 'unknown'}`);
+            try {
+                let content;
+                
+                if (file instanceof File || file instanceof Blob) {
+                    content = await readFileContent(file);
+                } else if (file.fromDatabase && file.path) {
+                    content = await downloadFileFromSupabase(file.path);
+                } else {
+                    throw new Error(`Unable to read file: ${file.name || 'unknown'}`);
+                }
+                
+                if (!content || content.trim().length === 0) {
+                    console.warn(`No text extracted from ${file.name}`);
+                    continue;
+                }
+
+                content = content
+                    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+                
+                console.log(`Extracted ${content.length} characters from ${file.name}`);
+                combinedContent += `\n\n--- Content from ${file.name} ---\n\n${content}`;
+                
+            } catch (fileError) {
+                console.error(`Error processing ${file.name}:`, fileError);
+                alert(`Error reading ${file.name}: ${fileError.message}`);
+                continue;
             }
-            
-            combinedContent += `\n\n--- Content from ${file.name} ---\n\n${content}`;
         }
         
-        const prompt = `TASK: Generate flashcards as JSON array ONLY.
+        if (!combinedContent || combinedContent.trim().length === 0) {
+            throw new Error('No text content could be extracted from the selected files');
+        }
+        
+        console.log('Total content length:', combinedContent.length);
+        
+        flashcardContainer.innerHTML = `
+            <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    <p style="margin-top: 20px; color: #6b7280;">Generating flashcards...</p>
+                </div>
+            </div>
+        `;
+        
+        const contentToSend = combinedContent.substring(0, 15000);
+        
+        const prompt = `You are a flashcard generator. Generate flashcards from the following content.
 
-        CRITICAL INSTRUCTIONS:
-        - Convert any input text written in Cyrillic to Latin script.
-        - Generate flashcards in the SAME LANGUAGE as the source content
-        - DO NOT greet me. DO NOT explain. DO NOT add any text before or after the JSON.
-        - Your ENTIRE response must be ONLY valid JSON array starting with [ and ending with ].
+CRITICAL INSTRUCTIONS:
+1. If the content is in Cyrillic script, convert it to Latin script
+2. Generate flashcards in the SAME LANGUAGE as the source content
+3. Return ONLY a valid JSON array - no greetings, no explanations, no markdown
+4. Your response must start with [ and end with ]
 
-        Content to create flashcards from:
-        ${combinedContent.substring(0, 12000)}
+Content:
+${contentToSend}
 
-        FORMAT (respond with ONLY this, nothing else):
-        [{"front":"question","back":"answer"},{"front":"question","back":"answer"}]
-
-        Generate 8-12 flashcards now:`;
+Generate 8-12 flashcards in this exact JSON format:
+[{"front":"question","back":"answer"},{"front":"question","back":"answer"}]`;
 
         const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
             method: "POST",
@@ -1012,8 +1046,13 @@ async function generateFlashcards() {
             })
         });
 
+        if (!res.ok) {
+            throw new Error(`API request failed: ${res.status} ${res.statusText}`);
+        }
+
         const textResponse = await res.text();
-        console.log("Raw response:", textResponse);
+        console.log("Raw API response length:", textResponse.length);
+        console.log("First 200 chars:", textResponse.substring(0, 200));
 
         const data = JSON.parse(textResponse);
 
@@ -1022,11 +1061,27 @@ async function generateFlashcards() {
         }
 
         const aiResponse = data.response || "";
-
-        const cleanedResponse = aiResponse.replace(/```json|```/g, "").trim();
+        
+        let cleanedResponse = aiResponse
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .replace(/^[^[\{]*/, "")
+            .replace(/[^}\]]*$/, "")
+            .trim();
+        
+        console.log("Cleaned response:", cleanedResponse.substring(0, 200));
+        
+        if (!cleanedResponse.startsWith('[') && !cleanedResponse.startsWith('{')) {
+            throw new Error('API response is not valid JSON format');
+        }
+        
         generatedFlashcards = JSON.parse(cleanedResponse);
+        
+        if (!Array.isArray(generatedFlashcards) || generatedFlashcards.length === 0) {
+            throw new Error('No flashcards were generated');
+        }
+        
         currentCardIndex = 0;
-
         displayFlashcardViewer();
         
     } catch (error) {
@@ -1034,8 +1089,8 @@ async function generateFlashcards() {
         flashcardContainer.innerHTML = `
             <div class="chatBox">
                 <p style="text-align: center; color: #ef4444; padding: 20px;">
-                    Error generating flashcards: ${error.message}<br>
-                    Please try again.
+                    Error generating flashcards: ${error.message}<br><br>
+                    Please make sure your files contain readable text and try again.
                 </p>
             </div>
         `;
@@ -1043,12 +1098,55 @@ async function generateFlashcards() {
 }
 
 async function readFileContent(file) {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = reject;
-        reader.readAsText(file);
+    return new Promise(async (resolve, reject) => {
+        try {
+            const fileName = file.name.toLowerCase();
+            
+            if (fileName.endsWith('.pdf')) {
+                const text = await extractTextFromPDF(file);
+                resolve(text);
+                return;
+            }
+            
+
+            if (fileName.endsWith('.docx')) {
+                const text = await extractTextFromDOCX(file);
+                resolve(text);
+                return;
+            }
+            
+            if (fileName.endsWith('.doc')) {
+                const text = await extractTextFromDOCX(file);
+                resolve(text);
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = reject;
+            reader.readAsText(file);
+            
+        } catch (error) {
+            reject(error);
+        }
     });
+}
+
+
+async function extractTextFromDOCX(file) {
+    try {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+        
+        if (!result.value || result.value.trim().length === 0) {
+            throw new Error('No text content found in document');
+        }
+        
+        return result.value.trim();
+    } catch (error) {
+        console.error('DOCX extraction error:', error);
+        throw new Error(`Failed to extract text from DOCX: ${error.message}`);
+    }
 }
 
 async function extractTextFromPDF(file) {
@@ -1083,12 +1181,32 @@ async function downloadFileFromSupabase(filePath) {
             throw new Error(`Failed to download file: ${error.message}`);
         }
 
-        if (filePath.toLowerCase().endsWith('.pdf')) {
-            return await extractTextFromPDF(data);
+        const fileName = filePath.toLowerCase();
+        console.log('Processing downloaded file:', fileName);
+        
+        if (fileName.endsWith('.pdf')) {
+            const text = await extractTextFromPDF(data);
+            if (!text || text.trim().length === 0) {
+                throw new Error('PDF extraction returned no text');
+            }
+            return text.trim();
+        }
+        
+        if (fileName.endsWith('.docx')) {
+            const text = await extractTextFromDOCX(data);
+            return text;
+        }
+        
+        if (fileName.endsWith('.doc')) {
+            const text = await extractTextFromDOCX(data);
+            return text;
         }
 
         const text = await data.text();
-        return text;
+        if (!text || text.trim().length === 0) {
+            throw new Error('File is empty');
+        }
+        return text.trim();
     } catch (error) {
         console.error('Download error:', error);
         throw error;
