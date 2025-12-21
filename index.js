@@ -893,19 +893,18 @@ chatInput.addEventListener("keydown", (e) => {
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+
 let generatedFlashcards = [];
 let currentCardIndex = 0;
 
 function displayFlashcardFiles() {
     const sideContainer = document.querySelector('#flashcards .sideContainer');
-    
-    if (!sideContainer){
-        return;
-    }
+    if (!sideContainer) return;
 
     sideContainer.innerHTML = `
         <div style="flex: 1;">
             <h3 style="margin: 0; margin-bottom: 20px;">Files List</h3>
+            <p style="color: #6b7280; font-size: 12px; margin-bottom: 10px;">Select one file to generate flashcards</p>
             <div id="flashcardFilesList"></div>
         </div>
         <div class="buttons2" style="margin-top: auto;">
@@ -924,90 +923,192 @@ function displayFlashcardFiles() {
     
     uploadedFiles.forEach((file, index) => {
         const fileItem = document.createElement('div');
-        fileItem.style.cssText = 'padding: 12px; background: white; border-radius: 8px; margin-bottom: 10px; cursor: pointer; border: 2px solid transparent; transition: border 0.2s;';
-        fileItem.className = 'flashcard-file-item';
-        
+        fileItem.style.cssText = 'padding: 12px; background: white; border-radius: 8px; margin-bottom: 10px; cursor: pointer;';
         fileItem.innerHTML = `
             <div style="display: flex; align-items: center; gap: 10px;">
-                <input type="checkbox" class="file-checkbox" data-index="${index}">
+                <input type="radio" name="flashcard-file" class="file-radio" data-index="${index}">
                 <div style="flex: 1;">
                     <p style="margin: 0; font-size: 14px; font-weight: 500; color: #1f2937;">${file.name}</p>
                     <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 4px;">${formatFileSize(file.size)}</p>
                 </div>
             </div>
         `;
-        
         filesList.appendChild(fileItem);
     });
     
-    const generateBtn = sideContainer.querySelector('.generateFlashcardsBtn');
-    generateBtn.addEventListener('click', generateFlashcards);
+    document.querySelector('.generateFlashcardsBtn').addEventListener('click', generateFlashcards);
+}
+
+async function generateFlashcardsForSingleFile(content, fileName) {
+    const sanitizedContent = content.substring(0, 12000).trim();
+    
+    const prompt = `You are a flashcard generator. Generate flashcards from the following content.
+
+CRITICAL INSTRUCTIONS:
+1. Keep the content in its original script (Cyrillic stays Cyrillic, Latin stays Latin)
+2. Generate flashcards in the SAME LANGUAGE as the source content
+3. Return ONLY a valid JSON array - no greetings, no explanations, no markdown
+4. Your response must start with [ and end with ]
+5. Ensure all quotes inside text are properly escaped
+
+Content from ${fileName}:
+${sanitizedContent}
+
+Generate 6-10 flashcards in this exact JSON format:
+[{"front":"question","back":"answer"}]`;
+
+    const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8" },
+        body: JSON.stringify({
+            message: prompt,
+            history: [],
+            mode: "flashcard_generation"
+        })
+    });
+
+    if (!res.ok) {
+        const errorText = await res.text();
+        if (errorText.includes('Rate limit')) {
+            throw new Error('API rate limit reached. Please wait a few seconds and try again.');
+        }
+        throw new Error(`API request failed: ${res.status}`);
+    }
+
+    const data = JSON.parse(await res.text());
+    if (data.error) throw new Error(data.error);
+
+    let aiResponse = data.response || "";
+    console.log('Raw AI response:', aiResponse.substring(0, 500));
+
+    aiResponse = aiResponse.replace(/\\\\u([0-9a-fA-F]{4})/g, '\\u$1');
+
+    let cleanedResponse = aiResponse.replace(/```json|```/g, "").trim();
+
+    const startIdx = cleanedResponse.indexOf('[');
+    const endIdx = cleanedResponse.lastIndexOf(']');
+    
+    if (startIdx === -1 || endIdx === -1) {
+        console.error('No JSON array found in response');
+        throw new Error('API response is not valid JSON format');
+    }
+    
+    cleanedResponse = cleanedResponse.substring(startIdx, endIdx + 1);
+    console.log('Cleaned response:', cleanedResponse.substring(0, 500));
+
+    try {
+        const flashcards = JSON.parse(cleanedResponse);
+        if (!Array.isArray(flashcards) || flashcards.length === 0) {
+            throw new Error('No flashcards were generated');
+        }
+        return flashcards;
+    } catch (parseError) {
+        console.error('First parse failed:', parseError.message);
+        
+        try {
+            let fixedResponse = cleanedResponse;
+            
+            fixedResponse = fixedResponse.replace(
+                /"(front|back)"\s*:\s*"([^"]*(?:[^"\\]"[^"]*)*?)"/g,
+                (match, key, value) => {
+                    const escapedValue = value.replace(/\\"/g, '##ESCAPED##')
+                                              .replace(/"/g, '\\"')
+                                              .replace(/##ESCAPED##/g, '\\"');
+                    return `"${key}":"${escapedValue}"`;
+                }
+            );
+            
+            console.log('Attempting parse with fixed quotes...');
+            const flashcards = JSON.parse(fixedResponse);
+            if (!Array.isArray(flashcards) || flashcards.length === 0) {
+                throw new Error('No flashcards were generated');
+            }
+            return flashcards;
+        } catch (secondError) {
+            console.error('Second parse failed:', secondError.message);
+            console.error('Problematic JSON:', cleanedResponse);
+            
+            try {
+                const flashcards = [];
+                const regex = /"front"\s*:\s*"([^"]+)"\s*,\s*"back"\s*:\s*"([^"]+)"/g;
+                let match;
+                
+                while ((match = regex.exec(cleanedResponse)) !== null) {
+                    flashcards.push({
+                        front: match[1].replace(/\\"/g, '"'),
+                        back: match[2].replace(/\\"/g, '"')
+                    });
+                }
+                
+                if (flashcards.length > 0) {
+                    console.log('Successfully extracted flashcards using regex');
+                    return flashcards;
+                }
+            } catch (regexError) {
+                console.error('Regex extraction failed:', regexError);
+            }
+            
+            throw new Error('Could not parse flashcards from API response. The content may have special characters that need different handling.');
+        }
+    }
 }
 
 async function generateFlashcards() {
-    const checkboxes = document.querySelectorAll('.file-checkbox:checked');
-    
-    if (checkboxes.length === 0) {
-        alert('Please select at least one file to generate flashcards');
+    const selectedRadio = document.querySelector('.file-radio:checked');
+    if (!selectedRadio) {
+        alert('Please select a file to generate flashcards');
         return;
     }
 
-    const selectedFiles = Array.from(checkboxes).map(cb => uploadedFiles[parseInt(cb.dataset.index)]);
+    const selectedFile = uploadedFiles[parseInt(selectedRadio.dataset.index)];
+    const fileId = selectedFile.id || selectedFile.name;
+    const fileName = selectedFile.name;
     
-    console.log('Selected files:', selectedFiles);
-
     const flashcardContainer = document.querySelector('#flashcards .chatContainer');
+    
     flashcardContainer.innerHTML = `
         <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
             <div style="text-align: center;">
                 <div style="border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
-                <p style="margin-top: 20px; color: #6b7280;">Extracting text from files...</p>
+                <p style="margin-top: 20px; color: #6b7280;">Checking for existing flashcards...</p>
             </div>
         </div>
     `;
     
     try {
-        let combinedContent = '';
+        const existingFlashcards = await getExistingFlashcards([fileId]);
         
-        for (const file of selectedFiles) {
-            console.log('Processing file:', file.name);
-            
-            try {
-                let content;
-                
-                if (file instanceof File || file instanceof Blob) {
-                    content = await readFileContent(file);
-                } else if (file.fromDatabase && file.path) {
-                    content = await downloadFileFromSupabase(file.path);
-                } else {
-                    throw new Error(`Unable to read file: ${file.name || 'unknown'}`);
-                }
-                
-                if (!content || content.trim().length === 0) {
-                    console.warn(`No text extracted from ${file.name}`);
-                    continue;
-                }
-
-                content = content
-                    .replace(/[\x00-\x1F\x7F-\x9F]/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .trim();
-                
-                console.log(`Extracted ${content.length} characters from ${file.name}`);
-                combinedContent += `\n\n--- Content from ${file.name} ---\n\n${content}`;
-                
-            } catch (fileError) {
-                console.error(`Error processing ${file.name}:`, fileError);
-                alert(`Error reading ${file.name}: ${fileError.message}`);
-                continue;
-            }
+        if (existingFlashcards && existingFlashcards.length > 0) {
+            generatedFlashcards = existingFlashcards;
+            currentCardIndex = 0;
+            displayFlashcardViewer();
+            showNotification('✓ Loaded saved flashcards', '#10b981');
+            return;
         }
         
-        if (!combinedContent || combinedContent.trim().length === 0) {
-            throw new Error('No text content could be extracted from the selected files');
+        flashcardContainer.innerHTML = `
+            <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
+                <div style="text-align: center;">
+                    <div style="border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                    <p style="margin-top: 20px; color: #6b7280;">Extracting text from file...</p>
+                </div>
+            </div>
+        `;
+        
+        let content;
+        if (selectedFile instanceof File || selectedFile instanceof Blob) {
+            content = await readFileContent(selectedFile);
+        } else if (selectedFile.fromDatabase && selectedFile.path) {
+            content = await downloadFileFromSupabase(selectedFile.path);
+        } else {
+            throw new Error('Unable to read file');
         }
         
-        console.log('Total content length:', combinedContent.length);
+        if (!content || content.trim().length === 0) {
+            throw new Error('No text could be extracted from the file');
+        }
+        
+        content = content.replace(/[\x00-\x1F\x7F-\x9F]/g, ' ').replace(/\s+/g, ' ').trim();
         
         flashcardContainer.innerHTML = `
             <div class="chatBox" style="display: flex; align-items: center; justify-content: center;">
@@ -1018,79 +1119,20 @@ async function generateFlashcards() {
             </div>
         `;
         
-        const contentToSend = combinedContent.substring(0, 15000);
+        generatedFlashcards = await generateFlashcardsForSingleFile(content, fileName);
         
-        const prompt = `You are a flashcard generator. Generate flashcards from the following content.
-
-CRITICAL INSTRUCTIONS:
-1. If the content is in Cyrillic script, convert it to Latin script
-2. Generate flashcards in the SAME LANGUAGE as the source content
-3. Return ONLY a valid JSON array - no greetings, no explanations, no markdown
-4. Your response must start with [ and end with ]
-
-Content:
-${contentToSend}
-
-Generate 8-12 flashcards in this exact JSON format:
-[{"front":"question","back":"answer"},{"front":"question","back":"answer"}]`;
-
-        const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: prompt,
-                history: [],
-                mode: "flashcard_generation"
-            })
-        });
-
-        if (!res.ok) {
-            throw new Error(`API request failed: ${res.status} ${res.statusText}`);
-        }
-
-        const textResponse = await res.text();
-        console.log("Raw API response length:", textResponse.length);
-        console.log("First 200 chars:", textResponse.substring(0, 200));
-
-        const data = JSON.parse(textResponse);
-
-        if (data.error) {
-            throw new Error(data.error);
-        }
-
-        const aiResponse = data.response || "";
-        
-        let cleanedResponse = aiResponse
-            .replace(/```json/g, "")
-            .replace(/```/g, "")
-            .replace(/^[^[\{]*/, "")
-            .replace(/[^}\]]*$/, "")
-            .trim();
-        
-        console.log("Cleaned response:", cleanedResponse.substring(0, 200));
-        
-        if (!cleanedResponse.startsWith('[') && !cleanedResponse.startsWith('{')) {
-            throw new Error('API response is not valid JSON format');
-        }
-        
-        generatedFlashcards = JSON.parse(cleanedResponse);
-        
-        if (!Array.isArray(generatedFlashcards) || generatedFlashcards.length === 0) {
-            throw new Error('No flashcards were generated');
-        }
+        await saveFlashcardsToSupabase([fileId], [fileName], generatedFlashcards);
         
         currentCardIndex = 0;
         displayFlashcardViewer();
         
     } catch (error) {
-        console.error('Error generating flashcards:', error);
+        console.error('Error:', error);
         flashcardContainer.innerHTML = `
             <div class="chatBox">
                 <p style="text-align: center; color: #ef4444; padding: 20px;">
-                    Error generating flashcards: ${error.message}<br><br>
-                    Please make sure your files contain readable text and try again.
+                    Error: ${error.message}<br><br>
+                    Please try again.
                 </p>
             </div>
         `;
@@ -1098,130 +1140,61 @@ Generate 8-12 flashcards in this exact JSON format:
 }
 
 async function readFileContent(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const fileName = file.name.toLowerCase();
-            
-            if (fileName.endsWith('.pdf')) {
-                const text = await extractTextFromPDF(file);
-                resolve(text);
-                return;
-            }
-            
-
-            if (fileName.endsWith('.docx')) {
-                const text = await extractTextFromDOCX(file);
-                resolve(text);
-                return;
-            }
-            
-            if (fileName.endsWith('.doc')) {
-                const text = await extractTextFromDOCX(file);
-                resolve(text);
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = (e) => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsText(file);
-            
-        } catch (error) {
-            reject(error);
-        }
+    const fileName = file.name.toLowerCase();
+    
+    if (fileName.endsWith('.pdf')) return await extractTextFromPDF(file);
+    if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) return await extractTextFromDOCX(file);
+    
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
     });
 }
 
-
 async function extractTextFromDOCX(file) {
-    try {
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
-        
-        if (!result.value || result.value.trim().length === 0) {
-            throw new Error('No text content found in document');
-        }
-        
-        return result.value.trim();
-    } catch (error) {
-        console.error('DOCX extraction error:', error);
-        throw new Error(`Failed to extract text from DOCX: ${error.message}`);
+    const arrayBuffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    if (!result.value || result.value.trim().length === 0) {
+        throw new Error('No text found in document');
     }
+    return result.value.trim();
 }
 
 async function extractTextFromPDF(file) {
-    try {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        
-        let fullText = '';
-        
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => item.str).join(' ');
-            fullText += pageText + '\n\n';
-        }
-        
-        return fullText;
-    } catch (error) {
-        console.error('PDF extraction error:', error);
-        throw new Error(`Failed to extract text from PDF: ${error.message}`);
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        fullText += textContent.items.map(item => item.str).join(' ') + '\n\n';
     }
+    
+    return fullText;
 }
 
 async function downloadFileFromSupabase(filePath) {
-    try {
-        const { data, error } = await supabase.storage
-            .from('documents')
-            .download(filePath);
-        
-        if (error) {
-            console.error('Error downloading file:', error);
-            throw new Error(`Failed to download file: ${error.message}`);
-        }
+    const { data, error } = await supabase.storage.from('documents').download(filePath);
+    if (error) throw new Error(`Failed to download file: ${error.message}`);
 
-        const fileName = filePath.toLowerCase();
-        console.log('Processing downloaded file:', fileName);
-        
-        if (fileName.endsWith('.pdf')) {
-            const text = await extractTextFromPDF(data);
-            if (!text || text.trim().length === 0) {
-                throw new Error('PDF extraction returned no text');
-            }
-            return text.trim();
-        }
-        
-        if (fileName.endsWith('.docx')) {
-            const text = await extractTextFromDOCX(data);
-            return text;
-        }
-        
-        if (fileName.endsWith('.doc')) {
-            const text = await extractTextFromDOCX(data);
-            return text;
-        }
-
-        const text = await data.text();
-        if (!text || text.trim().length === 0) {
-            throw new Error('File is empty');
-        }
-        return text.trim();
-    } catch (error) {
-        console.error('Download error:', error);
-        throw error;
-    }
+    const fileName = filePath.toLowerCase();
+    
+    if (fileName.endsWith('.pdf')) return await extractTextFromPDF(data);
+    if (fileName.endsWith('.docx') || fileName.endsWith('.doc')) return await extractTextFromDOCX(data);
+    
+    const text = await data.text();
+    if (!text || text.trim().length === 0) throw new Error('File is empty');
+    return text.trim();
 }
 
-function displayFlashcardViewer(){
+function displayFlashcardViewer() {
     const flashcardContainer = document.querySelector('#flashcards .chatContainer');
 
-    if(generatedFlashcards.length === 0){
-        flashcardContainer.innerHTML = `
-            <div class="chatBox">
-                <p style="text-align: center; padding: 20px;">No flashcards generated</p>
-            </div>
-        `;
+    if (generatedFlashcards.length === 0) {
+        flashcardContainer.innerHTML = '<div class="chatBox"><p style="text-align: center; padding: 20px;">No flashcards generated</p></div>';
         return;
     }
 
@@ -1230,87 +1203,119 @@ function displayFlashcardViewer(){
             <div style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
                 Card ${currentCardIndex + 1} of ${generatedFlashcards.length}
             </div>
-            
             <div class="flashcard" id="flashcard">
                 <div class="flashcard-front">
                     <div>
-                        <p style="font-size: 18px; line-height: 1.6; color: #1f2937; margin: 0;">
-                            ${generatedFlashcards[currentCardIndex].front}
-                        </p>
+                        <p style="font-size: 18px; line-height: 1.6; color: #1f2937; margin: 0;">${generatedFlashcards[currentCardIndex].front}</p>
                         <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">Click to reveal answer</p>
                     </div>
                 </div>
-                
                 <div class="flashcard-back">
                     <div>
-                        <p style="font-size: 16px; line-height: 1.6; color: #1f2937; margin: 0;">
-                            ${generatedFlashcards[currentCardIndex].back}
-                        </p>
+                        <p style="font-size: 16px; line-height: 1.6; color: #1f2937; margin: 0;">${generatedFlashcards[currentCardIndex].back}</p>
                         <p style="font-size: 12px; color: #9ca3af; margin-top: 20px;">Click to see question</p>
                     </div>
                 </div>
             </div>
-            
             <div class="buttons2" style="margin-top: 30px;">
-                <button id="prevCard" class="prevCard" ${currentCardIndex === 0 ? 'disabled' : ''}>
-                    ← Previous
-                </button>
-                <button id="nextCard" class="nextCard" ${currentCardIndex === generatedFlashcards.length - 1 ? 'disabled' : ''}>
-                    Next →
-                </button>
+                <button id="prevCard" class="prevCard" ${currentCardIndex === 0 ? 'disabled' : ''}>← Previous</button>
+                <button id="nextCard" class="nextCard" ${currentCardIndex === generatedFlashcards.length - 1 ? 'disabled' : ''}>Next →</button>
             </div>
         </div>
     `;
     
     const flashcard = document.getElementById('flashcard');
     let isFlipped = false;
-
     flashcard.addEventListener('click', () => {
         isFlipped = !isFlipped;
         flashcard.style.transform = isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
     });
 
     document.getElementById('prevCard').addEventListener('click', () => {
-        if(currentCardIndex > 0){
+        if (currentCardIndex > 0) {
             currentCardIndex--;
             displayFlashcardViewer();
         }
     });
 
     document.getElementById('nextCard').addEventListener('click', () => {
-        if(currentCardIndex < generatedFlashcards.length - 1){
+        if (currentCardIndex < generatedFlashcards.length - 1) {
             currentCardIndex++;
             displayFlashcardViewer();
         }
     });
 }
 
+async function saveFlashcardsToSupabase(fileIds, fileNames, flashcards) {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return false;
+
+        const sortedFileIds = [...fileIds].sort();
+        
+        const { data: existing } = await supabase.from('flashcard_sets').select('id').eq('user_id', user.id);
+        
+        let existingSetId = null;
+        if (existing && existing.length > 0) {
+            for (const set of existing) {
+                const { data: setData } = await supabase.from('flashcard_sets').select('file_ids, id').eq('id', set.id).single();
+                if (setData && JSON.stringify([...(setData.file_ids || [])].sort()) === JSON.stringify(sortedFileIds)) {
+                    existingSetId = setData.id;
+                    break;
+                }
+            }
+        }
+        
+        const result = existingSetId
+            ? await supabase.from('flashcard_sets').update({ file_names: fileNames, flashcards, updated_at: new Date().toISOString() }).eq('id', existingSetId).select()
+            : await supabase.from('flashcard_sets').insert({ user_id: user.id, file_ids: sortedFileIds, file_names: fileNames, flashcards }).select();
+
+        return !result.error;
+    } catch (err) {
+        console.error('Save error:', err);
+        return false;
+    }
+}
+
+async function getExistingFlashcards(fileIds) {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return null;
+
+        const sortedFileIds = [...fileIds].sort();
+        const { data } = await supabase.from('flashcard_sets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(1);
+
+        if (data && data.length > 0 && JSON.stringify([...data[0].file_ids].sort()) === JSON.stringify(sortedFileIds)) {
+            return data[0].flashcards;
+        }
+        return null;
+    } catch (err) {
+        console.error('Get error:', err);
+        return null;
+    }
+}
+
+function showNotification(message, color) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `position: fixed; top: 20px; right: 20px; background: ${color}; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; animation: slideIn 0.3s ease-out;`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 const style = document.createElement('style');
 style.textContent = `
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    #prevCard:disabled, #nextCard:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    #prevCard:not(:disabled):hover {
-        background: #d1d5db !important;
-    }
-
-    #nextCard:not(:disabled):hover {
-        background: #4338ca !important;
-    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    #prevCard:disabled, #nextCard:disabled { opacity: 0.5; cursor: not-allowed; }
+    #prevCard:not(:disabled):hover { background: #d1d5db !important; }
+    #nextCard:not(:disabled):hover { background: #4338ca !important; }
 `;
 document.head.appendChild(style);
