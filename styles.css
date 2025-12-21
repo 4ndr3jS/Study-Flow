@@ -1029,3 +1029,24 @@ body.dark-mode .nameInput::placeholder {
     align-items: center;
     margin-left: 15px;
 }
+
+.quizSection {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 20px;
+    align-items: flex-start;
+    width: calc(100% - 364px);
+    margin-left: 182px;
+    margin-top: 20px;
+}
+
+.quizContainer{
+    background-color: rgba(241, 245, 249, 0.96);
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    min-height: 560px;
+    width: 1070px;
+    justify-self: center;
+}
