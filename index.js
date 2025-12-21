@@ -406,7 +406,7 @@ function applyAccentToElements(elements) {
 
 
 function applyDarkMode(isDark) {
-    const containers = document.querySelectorAll('.container3, .container, .chatContainer, .sideContainer');
+    const containers = document.querySelectorAll('.container3, .container, .chatContainer, .sideContainer, .quizContainer');
     const aboutSection = document.querySelector('.about');
     const titles = document.querySelectorAll('.title2');
     const titles1 = document.querySelectorAll('.title')
@@ -606,6 +606,7 @@ tabs.forEach( tab => {
         if(content){
             content.style.display = 'block';
             displayFlashcardFiles();
+            displayQuizFiles();
         }
     });
 });
@@ -954,7 +955,7 @@ CRITICAL INSTRUCTIONS:
 Content from ${fileName}:
 ${sanitizedContent}
 
-Generate 6-10 flashcards in this exact JSON format:
+Generate 12 flashcards in this exact JSON format:
 [{"front":"question","back":"answer"}]`;
 
     const res = await fetch("https://long-mode-42d3.andrejstanic3.workers.dev/chat", {
@@ -1319,3 +1320,49 @@ style.textContent = `
     #nextCard:not(:disabled):hover { background: #4338ca !important; }
 `;
 document.head.appendChild(style);
+
+let generatedQuiz = [];
+let currentQuestionIndex = 0;
+let userAnswers = [];
+
+function displayQuizFiles() {
+    const sideContainer = document.querySelector('#quiz .sideContainer');
+    if (!sideContainer) return;
+
+    sideContainer.innerHTML = `
+        <div style="flex: 1;">
+            <h3 style="margin: 0; margin-bottom: 20px;">Files List</h3>
+            <p style="color: #6b7280; font-size: 12px; margin-bottom: 10px;">Select one file to generate quiz</p>
+            <div id="quizFilesList"></div>
+        </div>
+        <div class="buttons2" style="margin-top: auto;">
+            <button class="button generateQuizBtn" style="align-items: center; background-color: #9333ea; color: white; width: 100%;">
+                <img src="imgs/book.png" height="30" width="30">Generate Quiz
+            </button>
+        </div>
+    `;
+    
+    const filesList = document.getElementById('quizFilesList');
+    
+    if (uploadedFiles.length === 0) {
+        filesList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">No files uploaded yet</p>';
+        return;
+    }
+    
+    uploadedFiles.forEach((file, index) => {
+        const fileItem = document.createElement('div');
+        fileItem.style.cssText = 'padding: 12px; background: white; border-radius: 8px; margin-bottom: 10px; cursor: pointer;';
+        fileItem.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="quiz-file" class="quiz-file-radio" data-index="${index}">
+                <div style="flex: 1;">
+                    <p style="margin: 0; font-size: 14px; font-weight: 500; color: #1f2937;">${file.name}</p>
+                    <p style="margin: 0; font-size: 12px; color: #6b7280; margin-top: 4px;">${formatFileSize(file.size)}</p>
+                </div>
+            </div>
+        `;
+        filesList.appendChild(fileItem);
+    });
+    
+    document.querySelector('.generateQuizBtn').addEventListener('click', generateQuiz);
+}
