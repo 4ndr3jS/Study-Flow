@@ -1046,7 +1046,8 @@ body.dark-mode .nameInput::placeholder {
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     padding: 10px;
-    min-height: 560px;
+    margin-top: 50px;
     width: 1070px;
     justify-self: center;
+    height: fit-content;
 }
