@@ -38,7 +38,7 @@ async function saveStudyGoal() {
             .from('study_goals')
             .upsert({
                 user_id: user.id,
-                hours_per_day: studyTime,
+                hours_per_week: studyTime,
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: 'user_id'
@@ -50,7 +50,7 @@ async function saveStudyGoal() {
         }
         
         alert('Study goal saved successfully!');
-        displayCurrentGoal(studyTime); // Fixed: was "studytime" (lowercase)
+        displayCurrentGoal(studyTime);
         
     } catch (err) {
         console.error('Error saving goal:', err);
@@ -72,21 +72,21 @@ async function loadStudyGoal() {
         
         const { data, error } = await supabase
             .from('study_goals')
-            .select('hours_per_day')
+            .select('hours_per_week')
             .eq('user_id', user.id)
-            .maybeSingle(); // Changed from .single() to .maybeSingle()
+            .maybeSingle();
         
         if (error) {
             console.error('Error loading goal:', error);
             return;
         }
         
-        if (data && data.hours_per_day) {
+        if (data && data.hours_per_week) {
             const input = document.getElementById('studyGoalInput');
             if (input) {
-                input.value = data.hours_per_day;
+                input.value = data.hours_per_week;
             }
-            displayCurrentGoal(data.hours_per_day);
+            displayCurrentGoal(data.hours_per_week);
         }
         
     } catch (err) {
@@ -97,19 +97,16 @@ async function loadStudyGoal() {
 function displayCurrentGoal(hours) {
     const currentGoalDiv = document.getElementById('currentGoalDisplay');
     if (currentGoalDiv) {
-        currentGoalDiv.textContent = `Current goal: ${hours} hours/day`;
+        currentGoalDiv.textContent = `Current goal: ${hours} hours/week`;
         currentGoalDiv.style.display = 'block';
     }
 }
 
-// Only run this code if we're on the settings page
 if (window.location.pathname.includes('settings.html')) {
     window.addEventListener('DOMContentLoaded', () => {
-        // Wait a bit for elements to be ready
         setTimeout(() => {
             loadStudyGoal();
-            
-            // Attach event listener only if button exists
+
             const saveBtn = document.getElementById('saveGoalBtn');
             if (saveBtn) {
                 saveBtn.onclick = saveStudyGoal;
@@ -210,4 +207,3 @@ function getFileUrl(filePath) {
     
     return data.publicUrl;
 }
-
