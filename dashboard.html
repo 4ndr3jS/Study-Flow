@@ -6,6 +6,7 @@
     <title>Dashboard</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;500;700&family=Montserrat:wght@300;400;500;700&family=Poppins:wght@300;400;500;700&family=Lato:wght@300;400;700&family=Nunito:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <nav style="transform: translateY(-120px);">
@@ -16,7 +17,7 @@
             <a href="index.html" class="links">Home</a>
             <a href="dashboard.html" class="links">Dashboard</a>
             <a href="study.html" class="links">Study</a>
-            <a href="settings.html" id="settings" style="display: none;" class="links">Settings</a>
+            <a href="settings.html" id="settings" class="links">Settings</a>
         </ul>
         <div class="btns">
             <h1 class="wlcm">Welcome, AndrejStanic3!</h1>
@@ -39,7 +40,7 @@
         </div>
 
         <div class="container" style="padding-top: 0; height: 165px;">
-            <h1>This Week's Progress</h1>
+            <h1 class="welcome-title" style="padding-top: 20px;">This Week's Progress</h1>
             <div class="progressContainer" style="margin-top: 30px;">
                 <div class="progressHeader">
                     <span class="progressLabel">Study Time goal</span>
@@ -69,11 +70,11 @@
 
     <div class="two-col-wrapper" style="margin-top: 20px;">
         <div class="container">
-            <h1 style="margin-top: 0; font-size: 26px;">Flashcards created (Last 7 days)</h1>
+            <h1 class="titlechart" style="margin-top: 0; font-size: 26px;">Flashcards created (Last 7 days)</h1>
             <canvas id="flashcardsChart" height="260"></canvas>
         </div>
         <div class="container">
-            <h1 style="margin-top: 0;">Quick Actions</h1>
+            <h1 class="titlechart" style="margin-top: 0;">Quick Actions</h1>
             <div class="quick-action" data-tab="upload">
                 <h2>Upload Docs</h2>
             </div>
@@ -97,6 +98,8 @@
     <script src="init.js"></script>
     <script src="app.js"></script>
     <script src="index.js"></script>
+    <script src="authGuard.js"></script>
+    <script src="globalSettings.js"></script>
     <script>
         async function updateNameDashboard(){
             const user = await checkUser();
