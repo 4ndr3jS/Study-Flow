@@ -9,6 +9,15 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;500;700&family=Montserrat:wght@300;400;500;700&family=Poppins:wght@300;400;500;700&family=Lato:wght@300;400;700&family=Nunito:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Screen Size Warning -->
+    <div id="screenSizeWarning">
+        <div class="warning-content">
+            <div class="icon">📱</div>
+            <h2>Screen Too Small</h2>
+            <p>StudyFlash requires a larger screen for the best experience. Please access this site from a tablet, laptop, or desktop device.</p>
+        </div>
+    </div>
+
     <nav style="transform: translateY(-120px);">
         <div class="brand">
             <a href="index.html" style="text-decoration: none; font-weight: bold;  color: white; font-size: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">StudyFlash</a>
@@ -26,7 +35,7 @@
         </div>
     </nav>
 
-    <div class="two-col-wrapper" style="max-width: 1540px; margin-top: 130px;">
+    <div class="two-col-wrapper dashboard-header">
         <div class="welcome-section">
             <h1 class="welcome-title">
                 Welcome back, <span id="userName">Student</span>! 👋
@@ -39,7 +48,7 @@
             </div>
         </div>
 
-        <div class="container" style="padding-top: 0; height: 165px;">
+        <div class="container progress-section">
             <h1 class="welcome-title" style="padding-top: 20px;">This Week's Progress</h1>
             <div class="progressContainer" style="margin-top: 30px;">
                 <div class="progressHeader">
@@ -53,28 +62,28 @@
         </div>
     </div>
 
-    <div class="stats1">
-        <div class="cards" style="scale: 1.1;">
+    <div class="stats1 stats-cards">
+        <div class="cards stats-card">
             <h1 class="name2">Study Time</h1>
             <label class="stat" id="liveTimer2">0h</label>
         </div>
-        <div class="cards" style="scale: 1.1;">
+        <div class="cards stats-card">
             <h1 class="name2">Flashcards</h1>
             <label class="stat" id="numOfFlashcards">0</label>
         </div>
-        <div class="cards" style="scale: 1.1;">
+        <div class="cards stats-card">
             <h1 class="name2">Accuracy</h1>
             <label class="stat" id="avgScore">0%</label>
         </div>
     </div>
 
-    <div class="two-col-wrapper" style="margin-top: 20px;">
-        <div class="container">
-            <h1 class="titlechart" style="margin-top: 0; font-size: 26px;">Flashcards created (Last 7 days)</h1>
+    <div class="two-col-wrapper dashboard-bottom">
+        <div class="container chart-container">
+            <h1 class="titlechart">Flashcards created (Last 7 days)</h1>
             <canvas id="flashcardsChart" height="260"></canvas>
         </div>
-        <div class="container">
-            <h1 class="titlechart" style="margin-top: 0;">Quick Actions</h1>
+        <div class="container quick-actions-container">
+            <h1 class="titlechart">Quick Actions</h1>
             <div class="quick-action" data-tab="upload">
                 <h2>Upload Docs</h2>
             </div>
