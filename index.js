@@ -2215,7 +2215,7 @@ async function updateProgressBar(barElementId, valueElementId) {
         const totalWeekSeconds = weekSeconds + currentSessionSeconds;
         
         const hoursStudied = (totalWeekSeconds / 3600).toFixed(1);
-        const goalHours = 15;
+        const goalHours = await getStudyGoal();   
         
         const percentage = Math.min((hoursStudied / goalHours) * 100, 100);
         
@@ -2302,3 +2302,60 @@ function activateTabFromURL(){
     });
 }
 activateTabFromURL();
+
+
+async function loadDailyQuote() {
+    const quoteLabel = document.getElementById('dailyQuote');
+
+    if(!quoteLabel){
+        return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const cachedQuote = localStorage.getItem('dailyQuote');
+    const cachedDate = localStorage.getItem('dailyQuoteDate');
+
+    if(cachedDate && cachedQuote === today){
+        quoteLabel.textContent = cachedQuote;
+        return;
+    }
+
+    const prompt  =`
+    Give me ONE short motivational quote for studying.
+    Rules:
+    - Max 1 sentance.
+    - No emojis.
+    - No Author name.
+    - Not too genric.
+    `
+    const response = await askFlashy(prompt);
+    const quote = response.replace(/^["']|["']$/g, '').trim();
+    quoteLabel.textContent = `"${quote}"`;
+
+    localStorage.setItem('dailyQuote', `"${quote}"`);
+    localStorage.setItem('dailyQuoteDate', today);
+}
+
+loadDailyQuote();
+
+async function getStudyGoal() {
+    const { data : {user}} = await supabase.auth.getUser();
+    if(!user){
+        return;
+    }
+    const { data, error } = await supabase
+        .from('study_goals')
+        .select('hours_per_week')
+        .eq('user_id', user.id)
+        .maybeSingle();
+    
+    if(error || !data?.hours_per_week){
+        return 1230;
+    }
+
+    return data.hours_per_week;
+}
+
+updateProgressBar('progressBar', 'progressValue');
+
+
