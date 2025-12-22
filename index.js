@@ -2171,21 +2171,6 @@ async function getAvgScore(){
     }
 }
 
-async function showProgressResult(elementId){
-    const element = document.getElementById(elementId);
-    if(!element){
-        return;
-    }
-
-    const updateDisplay = async () => {
-        const averageScore = await getAvgScore();
-        element.textContent = `${averageScore}%`
-    };
-
-    updateDisplay();
-    setInterval(updateDisplay, 30000);
-}
-
 async function showAvgScore(elementId){
     const element = document.getElementById(elementId);
     if(!element){
@@ -2285,3 +2270,35 @@ showNumOfFlashCards('numOfFlashcards');
 showAvgScore('avgScore');
 
 showProgressResult('progressValue');
+
+
+const quickActions = document.querySelectorAll('.quick-action');
+
+quickActions.forEach(action => {
+    action.addEventListener('click', () => {
+        const tab = action.dataset.tab;
+        window.location.href = `study.html?tab=${tab}`;
+    });
+});
+
+function activateTabFromURL(){
+    const params = new URLSearchParams(window.location.search);
+    const tabFromURL = params.get('tab');
+
+    if(!tabFromURL){
+        return;
+    }
+
+    hideAllContents();
+    deactivateAllTabs();
+    const content = document.getElementById(tabFromURL);
+    if(content){
+        content.style.display = 'block';
+    }
+    tabs.forEach(tab => {
+        if(tabContentMap[tab.textContent] === tabFromURL){
+            tab.classList.add('active');
+        }
+    });
+}
+activateTabFromURL();
