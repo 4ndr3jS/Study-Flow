@@ -620,8 +620,12 @@ tabs.forEach( tab => {
 });
 
 hideAllContents();
-document.getElementById('chat').style.display = 'block';
-tabs[0].classList.add('active');
+const chat = document.getElementById('chat');
+if(chat){
+    document.getElementById('chat').style.display = 'block';
+    tabs[0].classList.add('active');
+}
+
 
 
 const uploadBox = document.getElementById('uploadBox');
@@ -629,33 +633,38 @@ const fileInput = document.getElementById('fileInput');
 const uploadedFilesContainer = document.getElementById('uploadedFilesContainer');
 const filesList = document.getElementById('filesList');
 let uploadedFiles = [];
+if(uploadBox){
+    uploadBox.addEventListener('click', () => {
+        fileInput.click();
+    });
 
-uploadBox.addEventListener('click', () => {
-    fileInput.click();
-});
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
 
-fileInput.addEventListener('change', (e) => {
-    handleFiles(e.target.files);
-});
+    uploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadBox.classList.add('dragover');
+    });
 
-uploadBox.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    uploadBox.classList.add('dragover');
-});
+    uploadBox.addEventListener('dragleave', () => {
+        uploadBox.classList.remove('dragover');
+    });
 
-uploadBox.addEventListener('dragleave', () => {
-    uploadBox.classList.remove('dragover');
-});
-
-uploadBox.addEventListener('drop', (e) => {
-    e.preventDefault();
-    uploadBox.classList.remove('dragover');
-    handleFiles(e.dataTransfer.files);
-});
+    uploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+}
 
 let loadedFromDatabase = false;
 
 async function initializeUserFiles() {
+    if (!document.getElementById('uploadedFilesContainer')) {
+        console.log('Upload container not found - skipping file initialization');
+        return;
+    }
     const files = await loadUserFiles();
     
     if (files && files.length > 0) {
@@ -695,6 +704,14 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 function displayUploadedFiles(){
+    const uploadedFilesContainer = document.getElementById('uploadedFilesContainer');
+    const filesList = document.getElementById('filesList');
+    
+    if (!uploadedFilesContainer || !filesList) {
+        console.log('Upload elements not found - skipping display');
+        return;
+    }
+    
     if(uploadedFiles.length === 0){
         uploadedFilesContainer.style.display = 'none';
         return;
@@ -892,15 +909,22 @@ async function sendMessage() {
     typingDiv.innerHTML = "Flashy: " + formatMessage(botReply);
     chatBox.scrollTop = chatBox.scrollHeight;
 }
+if(sendBtn){
+    sendBtn.addEventListener("click", sendMessage);
+}
 
-sendBtn.addEventListener("click", sendMessage);
-
-chatInput.addEventListener("keydown", (e) => {
+if(chatInput){
+    chatInput.addEventListener("keydown", (e) => {
     if(e.key === "Enter") sendMessage();
 });
+}
+
 
 const pdfjsLib = window['pdfjs-dist/build/pdf'];
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+if(pdfjsLib){
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
 
 
 let generatedFlashcards = [];
