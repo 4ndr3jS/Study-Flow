@@ -1,41 +1,41 @@
 # StudyFlash 📚
 
-A modern web application designed to help students learn more effectively through active recall, AI-powered study tools, and progress tracking.  
+A modern web application designed to help students learn more effectively through active recall, AI-powered study tools, and progress tracking.
 
 ---
 
 ## 🌟 Features
 
 ### Core Features
-- **AI Chat Assistant (Flashy)** - Get instant help with your study questions  
-- **Document Upload** - Support for PDF, TXT, DOC, and DOCX files  
-- **AI Flashcard Generation** - Automatically create flashcards from your study materials  
-- **Quiz Generation** - Generate custom quizzes based on uploaded content  
-- **Study Time Tracking** - Monitor your learning sessions automatically  
-- **Progress Dashboard** - Visualize your study habits and improvement  
-- **Dark Mode** - Easy on the eyes during late-night study sessions  
-- **Customizable UI** - Choose from multiple fonts and accent colors  
+- **AI Chat Assistant (Flashy)** - Get instant help with your study questions
+- **Document Upload** - Support for PDF, TXT, DOC, and DOCX files
+- **AI Flashcard Generation** - Automatically create flashcards from your study materials
+- **Quiz Generation** - Generate custom quizzes based on uploaded content
+- **Study Time Tracking** - Monitor your learning sessions automatically
+- **Progress Dashboard** - Visualize your study habits and improvement
+- **Dark Mode** - Easy on the eyes during late-night study sessions
+- **Customizable UI** - Choose from multiple fonts and accent colors
 
 ### Study Tools
-- 📝 **Flashcard Viewer** - Interactive flip cards with progress tracking  
-- ✅ **Quiz System** - 16-question quizzes with AI-powered answer verification  
-- 📊 **Analytics** - Track study time, accuracy, and flashcard count  
-- 🎯 **Goal Setting** - Set weekly study hour goals  
-- 🔥 **Streak Tracking** - Build consistent study habits  
-- 💬 **AI Chat** - Conversational study assistant powered by Groq AI  
+- 📝 **Flashcard Viewer** - Interactive flip cards with progress tracking
+- ✅ **Quiz System** - 16-question quizzes with AI-powered answer verification
+- 📊 **Analytics** - Track study time, accuracy, and flashcard count
+- 🎯 **Goal Setting** - Set weekly study hour goals
+- 🔥 **Streak Tracking** - Build consistent study habits
+- 💬 **AI Chat** - Conversational study assistant powered by Groq AI
 
 ---
 
 ## 🚀 Tech Stack
 
-- **Frontend:** Vanilla JavaScript, HTML5, CSS3  
-- **Backend:** Cloudflare Workers (API proxy)  
-- **Database:** Supabase (PostgreSQL)  
-- **AI:** Groq API (Llama 3.3 70B & Llama 3.1 8B)  
-- **PDF Processing:** PDF.js  
-- **Document Processing:** Mammoth.js  
-- **Charts:** Chart.js  
-- **Authentication:** Supabase Auth  
+- **Frontend:** Vanilla JavaScript, HTML5, CSS3
+- **Backend:** Cloudflare Workers (API proxy)
+- **Database:** Supabase (PostgreSQL)
+- **AI:** Groq API (Llama 3.3 70B & Llama 3.1 8B)
+- **PDF Processing:** PDF.js
+- **Document Processing:** Mammoth.js
+- **Charts:** Chart.js
+- **Authentication:** Supabase Auth
 
 ---
 
@@ -43,36 +43,40 @@ A modern web application designed to help students learn more effectively throug
 
 Before you begin, ensure you have:
 
-- A Supabase account  
-- A Groq API key  
-- A Cloudflare account for Workers  
-- Node.js installed (for local development)  
+- A Supabase account
+- A Groq API key
+- A Cloudflare account for Workers
+- Node.js installed (for local development)
 
 ---
 
 ## 🛠️ Installation
 
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/yourusername/studyflash.git
 cd studyflash
 ```
-2. Configure Supabase
-Create a config.js file in the root directory:
 
-javascript
-Copy code
+### 2. Configure Supabase
+
+Create a `config.js` file in the root directory:
+
+```javascript
 const CONFIG = {
     supabaseUrl: 'YOUR_SUPABASE_URL',
     supabaseKey: 'YOUR_SUPABASE_ANON_KEY',
     HF_TOKEN: 'YOUR_KEY_FOR_AI_AGENT'
 };
 window.CONFIG = CONFIG;
-3. Set Up Supabase Database
+```
+
+### 3. Set Up Supabase Database
+
 Run these SQL commands in your Supabase SQL editor:
 
-sql
-Copy code
+```sql
 -- Users are managed by Supabase Auth automatically
 
 -- Study time tracking
@@ -168,15 +172,15 @@ CREATE POLICY "Users can insert own attempts" ON quiz_attempts FOR INSERT WITH C
 CREATE POLICY "Users can view own goals" ON study_goals FOR SELECT USING (auth.uid() = user_id);
 CREATE POLICY "Users can insert own goals" ON study_goals FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can update own goals" ON study_goals FOR UPDATE USING (auth.uid() = user_id);
-4. Set Up Supabase Storage
-Go to Supabase Dashboard → Storage
+```
 
-Create a new bucket named documents (private)
+### 4. Set Up Supabase Storage
 
-Add policies:
+1. Go to Supabase Dashboard → Storage
+2. Create a new bucket named `documents` (private)
+3. Add policies:
 
-sql
-Copy code
+```sql
 CREATE POLICY "Users can upload own documents" ON storage.objects
 FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
 
@@ -185,9 +189,11 @@ FOR SELECT USING (bucket_id = 'documents' AND auth.uid()::text = (storage.folder
 
 CREATE POLICY "Users can delete own documents" ON storage.objects
 FOR DELETE USING (bucket_id = 'documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-5. Deploy Cloudflare Worker
-bash
-Copy code
+```
+
+### 5. Deploy Cloudflare Worker
+
+```bash
 # Install Wrangler CLI
 npm install -g wrangler
 
@@ -199,14 +205,19 @@ wrangler secret put GROQ_API_KEY
 
 # Deploy
 wrangler deploy
-Update index.js with your worker URL:
+```
 
-javascript
-Copy code
+Update `index.js` with your worker URL:
+
+```javascript
 const res = await fetch("https://YOUR-WORKER.workers.dev/chat", { /* ... */ });
-📁 Project Structure
-csharp
-Copy code
+```
+
+---
+
+## 📁 Project Structure
+
+```
 studyflash/
 ├── index.html          # Landing page
 ├── dashboard.html      # User dashboard
@@ -221,57 +232,73 @@ studyflash/
 ├── chart.js            # Dashboard charts
 ├── config.js           # Configuration (NOT committed)
 └── imgs/               # Image assets
-🔒 Security Notes
-Never commit config.js to GitHub
+```
 
-Use Supabase anon/public key (safe for frontend)
+---
 
-Store sensitive API keys in Cloudflare Worker secrets
+## 🔒 Security Notes
 
-🎨 Customization
+- Never commit `config.js` to GitHub
+- Use Supabase anon/public key (safe for frontend)
+- Store sensitive API keys in Cloudflare Worker secrets
+
+---
+
+## 🎨 Customization
+
 Users can customize:
 
-Fonts: Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Nunito
+- **Fonts:** Inter, Roboto, Open Sans, Montserrat, Poppins, Lato, Nunito
+- **Accent Colors:** Blue, Red, Yellow, Green
+- **Dark Mode:** Toggle between light and dark themes
+- **Study Goals:** Set custom weekly hour targets
 
-Accent Colors: Blue, Red, Yellow, Green
+---
 
-Dark Mode: Toggle between light and dark themes
+## 📊 Database Schema
 
-Study Goals: Set custom weekly hour targets
+- **study_time:** Daily study session tracking
+- **uploaded_files:** Document metadata and storage paths
+- **flashcard_sets:** Generated flashcard collections
+- **quiz_sets:** Generated quiz questions
+- **quiz_attempts:** Quiz results and scoring
+- **study_goals:** User-defined study targets
 
-📊 Database Schema
-study_time: Daily study session tracking
+---
 
-uploaded_files: Document metadata and storage paths
+## ⚠️ Known Issues
 
-flashcard_sets: Generated flashcard collections
+- Flashcard generation may occasionally fail with special characters
+- Quiz verification relies on AI and may have false positives/negatives
+- Large PDF files (>10MB) may take longer to process
 
-quiz_sets: Generated quiz questions
+---
 
-quiz_attempts: Quiz results and scoring
+## 🚀 Future Enhancements
 
-study_goals: User-defined study targets
+- Spaced repetition algorithm for flashcards
+- Collaborative study groups
+- Mobile app (React Native)
+- Export flashcards to Anki
+- Voice-to-text for quiz answers
+- Advanced analytics and insights
 
-Notes:
+---
 
-Flashcard generation may occasionally fail with special characters
+## 🤖 AI Information
 
-Quiz verification relies on AI and may have false positives/negatives
+**AI powered by Groq**
 
-Large PDF files (>10MB) may take longer to process
+- **LLM Used:** llama-3.1-8b-instant
 
-🚀 Future Enhancements
-Spaced repetition algorithm for flashcards
+---
 
-Collaborative study groups
+## 📄 License
 
-Mobile app (React Native)
-
-Export flashcards to Anki
-
-Voice-to-text for quiz answers
-
-Advanced analytics and insights
-
-AI powered by Groq, the LLM that is used: llama-3.1-8b-instant
 Icons from various open-source projects
+
+---
+
+## 📧 Contact
+
+For questions or support, please open an issue on GitHub.
