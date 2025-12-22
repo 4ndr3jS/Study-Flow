@@ -882,7 +882,6 @@ body.dark-mode .nameInput::placeholder {
     padding-right: 10px;
     margin-left: 10px;
     background: transparent;
-    color: white;
     padding: 6px 10px;
     border-radius: 10px;
     max-width: 80%;
@@ -1152,9 +1151,14 @@ body.dark-mode .nameInput::placeholder {
     margin-bottom: 10px;
     border-radius: 10px;
     transition: 0.2s ease;
+    
 }
 
 .quick-action:hover{
     cursor: pointer;
     background-color: #263b81;
+}
+
+#currentGoalDisplay{
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
