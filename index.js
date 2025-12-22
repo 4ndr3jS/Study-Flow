@@ -1812,3 +1812,289 @@ async function getExistingQuiz(fileIds) {
         return null;
     }
 }
+
+let sessionStartTime = null;
+let totalStudyTime = 0;
+let trackingInterval = null;
+let isTracking = false;
+
+function startTimeTracking(){
+    if(isTracking){
+        return;
+    }
+    sessionStartTime = Date.now();
+    isTracking = true;
+    trackingInterval = setInterval(() => {
+        saveCurrentSession();
+    }, 60000);
+}
+
+function getCurrentSessionTime(){
+    if(!sessionStartTime){
+        return 0;
+    }
+    return Math.floor((Date.now() - sessionStartTime) / 1000);
+}
+
+async function saveCurrentSession() {
+    try{
+        const { data: {user}} = await supabase.auth.getUser();
+        if(!user){
+            return;
+        }
+        const sessionTime = getCurrentSessionTime();
+        if(sessionTime < 10){
+            return;
+        }
+        const today = new Date().toISOString().split('T')[0];
+        const { data: existing } = await supabase
+            .from('study_time')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .maybeSingle();
+        
+        if (existing) {
+            const { error } = await supabase
+                .from('study_time')
+                .update({
+                    total_seconds: existing.total_seconds + sessionTime,
+                    updated_at: new Date().toISOString()
+                })
+                .eq('id', existing.id);
+            
+            if (error) {
+                console.error('Error updating study time:', error);
+            } else {
+                console.log(`✅ Saved ${sessionTime} seconds to today's total`);
+            }
+        } else {
+            const { error } = await supabase
+                .from('study_time')
+                .insert({
+                    user_id: user.id,
+                    date: today,
+                    total_seconds: sessionTime
+                });
+            
+            if (error) {
+                console.error('Error saving study time:', error);
+            } else {
+                console.log(`✅ Created new record with ${sessionTime} seconds`);
+            }
+        }
+        
+        sessionStartTime = Date.now();
+        
+    } catch (err) {
+        console.error('Save session error:', err);
+    }
+}
+
+function stopTimeTracking(){
+    if(!isTracking){
+        return;
+    }
+    isTracking = false;
+    if(trackingInterval){
+        clearInterval(trackingInterval);
+    }
+
+    saveCurrentSession();
+}
+
+async function getTotalStudyTime() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { today: 0, week: 0, total: 0 };
+        
+        const today = new Date().toISOString().split('T')[0];
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        const { data: todayData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .maybeSingle();
+
+        const { data: weekData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id)
+            .gte('date', weekAgo);
+
+        const { data: allData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id);
+        
+        const todaySeconds = todayData?.total_seconds || 0;
+        const weekSeconds = weekData?.reduce((sum, record) => sum + record.total_seconds, 0) || 0;
+        const totalSeconds = allData?.reduce((sum, record) => sum + record.total_seconds, 0) || 0;
+        
+        return {
+            today: todaySeconds,
+            week: weekSeconds,
+            total: totalSeconds
+        };
+        
+    } catch (err) {
+        console.error('Error getting study time:', err);
+        return { today: 0, week: 0, total: 0 };
+    }
+}
+
+function formatTime(seconds){
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds%3600)/60);
+
+    if(hours > 0){
+        return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+}
+
+function formatTimeDetailed(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    return `${hours}h ${minutes}m ${secs}s`;
+}
+
+async function displayStudyTime() {
+    const timeElement = document.querySelector('.timespent');
+    if(!timeElement){
+        return;
+    }
+    const times = await getTotalStudyTime();
+
+    timeElement.innerHTML = `
+        <div style="margin-top: 15px; padding: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <div style="margin-bottom: 15px;">
+                <p style="font-size: 14px; color: #6b7280; margin: 0 0 5px 0;">Today</p>
+                <p style="font-size: 24px; font-weight: 600; color: #1f2937; margin: 0;">${formatTime(times.today)}</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="font-size: 14px; color: #6b7280; margin: 0 0 5px 0;">This Week</p>
+                <p style="font-size: 24px; font-weight: 600; color: #4f46e5; margin: 0;">${formatTime(times.week)}</p>
+            </div>
+            <div>
+                <p style="font-size: 14px; color: #6b7280; margin: 0 0 5px 0;">All Time</p>
+                <p style="font-size: 24px; font-weight: 600; color: #10b981; margin: 0;">${formatTime(times.total)}</p>
+            </div>
+        </div>
+    `;
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+    supabase.auth.getUser().then(({data: {user}}) => {
+        if(user){
+            startTimeTracking();
+        }
+    });
+    if(window.location.pathname.includes('settings.html')){
+        displayStudyTime();
+        setInterval(displayStudyTime, 60000);
+    }
+});
+window.addEventListener('beforeunload', () => {
+    stopTimeTracking();
+});
+
+
+document.addEventListener('visibilitychange', () => {
+    if(document.hidden){
+        if(isTracking){
+            saveCurrentSession();
+            clearInterval(trackingInterval);
+        }
+    } else {
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user && !trackingInterval) {
+                sessionStartTime = Date.now();
+                trackingInterval = setInterval(() => {
+                    saveCurrentSession();
+                }, 60000);
+            }
+        });
+    }
+});
+
+function showLiveTimer(elementId){
+    const element = document.getElementById(elementId);
+    if(!element){
+        return;
+    }
+    
+    setInterval(() => {
+        if(sessionStartTime){
+            const currentSeconds = getCurrentSessionTime();
+            element.textContent = formatTimeDetailed(currentSeconds);
+        }
+    }, 1000);
+}
+
+function showNumOfFlashCards(elementId){
+    const element = document.getElementById(elementId);
+    if(!element){
+        return;
+    }
+    
+    setInterval(() => {
+        if(sessionStartTime){
+            const currentSeconds = getCurrentSessionTime();
+            element.textContent = formatTimeDetailed(currentSeconds);
+        }
+    }, 100000);
+}
+
+showLiveTimer('liveTimer');
+
+async function getNumOfFlashcards() {
+    try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return 0;
+
+        const { data, error } = await supabase
+            .from('flashcard_sets')
+            .select('flashcards')
+            .eq('user_id', user.id);
+
+        if (error) {
+            console.error('Error fetching flashcards:', error);
+            return 0;
+        }
+
+        const totalFlashcards = data.reduce((total, set) => {
+            return total + (set.flashcards?.length || 0);
+        }, 0);
+
+        return totalFlashcards;
+
+    } catch (err) {
+        console.error('Error getting flashcard count:', err);
+        return 0;
+    }
+}
+
+async function showNumOfFlashCards(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) {
+        return;
+    }
+    
+    const count = await getNumOfFlashcards();
+    element.textContent = `${count} flashcards`;
+    
+    setInterval(async () => {
+        const count = await getNumOfFlashcards();
+        element.textContent = `${count} flashcards`;
+    }, 30000);
+}
+
+showLiveTimer('liveTimer');
+showLiveTimer('liveTimer2');
+
+showNumOfFlashCards('numOfFlashcards');
