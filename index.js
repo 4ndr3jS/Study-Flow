@@ -1735,6 +1735,8 @@ async function finishQuiz() {
     
     const percentage = Math.round((correctCount / 16) * 100);
     
+    await saveQuizAttempt(correctCount, 16, percentage);
+
     quizContainer.innerHTML = `
         <div class="chatBox" style="display: flex; align-items: center; justify-content: center; min-height: 400px;">
             <div style="text-align: center; max-width: 500px;">
@@ -1756,6 +1758,33 @@ async function finishQuiz() {
             </div>
         </div>
     `;
+}
+
+async function saveQuizAttempt(score, totalQuestions, percentage) {
+    try{
+        const { data: {user}} = await supabase.auth.getUser();
+        if(!user){
+            return false;
+        }
+        const { error } = await supabase
+            .from('quiz_attempts')
+            .insert({
+                user_id: user.id,
+                score: score,
+                total_questions: totalQuestions,
+                percentage: percentage,
+                completed_at: new Date().toISOString()
+            });
+
+        if(error){
+            console.error('Error savign quiz attempts:', error);
+            return false;
+        }
+        return true;
+    } catch(err){
+        console.error('Save quiz attempt error:', err);
+        return false;
+    }
 }
 
 function resetQuiz() {
@@ -2028,11 +2057,27 @@ function showLiveTimer(elementId){
         return;
     }
     
-    setInterval(() => {
-        if(sessionStartTime){
-            const currentSeconds = getCurrentSessionTime();
-            element.textContent = formatTimeDetailed(currentSeconds);
+    setInterval(async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            element.textContent = '0h 0m 0s';
+            return;
         }
+
+        const today = new Date().toISOString().split('T')[0];
+        const { data: todayData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .maybeSingle();
+
+        const accumulatedSeconds = todayData?.total_seconds || 0;
+        
+        const currentSessionSeconds = sessionStartTime ? getCurrentSessionTime() : 0;
+        const totalSeconds = accumulatedSeconds + currentSessionSeconds;
+        
+        element.textContent = formatTimeDetailed(totalSeconds);
     }, 1000);
 }
 
@@ -2094,7 +2139,149 @@ async function showNumOfFlashCards(elementId) {
     }, 30000);
 }
 
+async function getAvgScore(){
+    try{
+        const { data: {user}} = await supabase.auth.getUser();
+        if(!user){
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('quiz_attempts')
+            .select('score, total_questions')
+            .eq('user_id', user.id);
+
+        if(error){
+            console.error("Error fetching scores:", error);
+            return 0;
+        }
+        if(!data || data.length === 0){
+            return 0;
+        }
+        
+        const totalPercentage = data.reduce((sum, attempt) =>{
+            const percentage = (attempt.score / attempt.total_questions) * 100;
+            return sum + percentage;
+        }, 0);
+        const avgScore = Math.round(totalPercentage / data.length);
+        return avgScore;
+    }catch(err){
+        console.error('Error calculating avgScore:', err);
+        return 0;
+    }
+}
+
+async function showProgressResult(elementId){
+    const element = document.getElementById(elementId);
+    if(!element){
+        return;
+    }
+
+    const updateDisplay = async () => {
+        const averageScore = await getAvgScore();
+        element.textContent = `${averageScore}%`
+    };
+
+    updateDisplay();
+    setInterval(updateDisplay, 30000);
+}
+
+async function showAvgScore(elementId){
+    const element = document.getElementById(elementId);
+    if(!element){
+        return;
+    }
+
+    const updateDisplay = async () => {
+        const averageScore = await getAvgScore();
+        element.textContent = `${averageScore}%`
+    };
+
+    updateDisplay();
+    setInterval(updateDisplay, 30000);
+}
+
+async function updateProgressBar(barElementId, valueElementId) {
+    const barElement = document.querySelector(`#${barElementId} .progress-fill`);
+    const valueElement = document.getElementById(valueElementId);
+    
+    if(!barElement || !valueElement){
+        return;
+    }
+
+    const updateDisplay = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            barElement.style.width = '0%';
+            valueElement.textContent = '0 / 15 hours';
+            return;
+        }
+
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const { data: weekData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id)
+            .gte('date', weekAgo);
+
+        const weekSeconds = weekData?.reduce((sum, record) => sum + record.total_seconds, 0) || 0;
+        
+        const currentSessionSeconds = (sessionStartTime && isTracking) ? getCurrentSessionTime() : 0;
+        const totalWeekSeconds = weekSeconds + currentSessionSeconds;
+        
+        const hoursStudied = (totalWeekSeconds / 3600).toFixed(1);
+        const goalHours = 15;
+        
+        const percentage = Math.min((hoursStudied / goalHours) * 100, 100);
+        
+        barElement.style.width = `${percentage}%`;
+        
+        valueElement.textContent = `${hoursStudied} / ${goalHours} hours`;
+    };
+
+    updateDisplay();
+    setInterval(updateDisplay, 60000);
+}
+
+async function showProgressResult(elementId) {
+    const element = document.getElementById(elementId);
+    if(!element){
+        return;
+    }
+
+    const updateDisplay = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            element.textContent = '0 / 15 hours';
+            return;
+        }
+
+        const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const { data: weekData } = await supabase
+            .from('study_time')
+            .select('total_seconds')
+            .eq('user_id', user.id)
+            .gte('date', weekAgo);
+
+        const weekSeconds = weekData?.reduce((sum, record) => sum + record.total_seconds, 0) || 0;
+        
+        const currentSessionSeconds = (sessionStartTime && isTracking) ? getCurrentSessionTime() : 0;
+        const totalWeekSeconds = weekSeconds + currentSessionSeconds;
+        
+        const hoursStudied = (totalWeekSeconds / 3600).toFixed(1);
+        const goalHours = 15;
+        
+        element.textContent = `${hoursStudied} / ${goalHours} hours`;
+    };
+
+    updateDisplay();
+    setInterval(updateDisplay, 60000);
+}
+
 showLiveTimer('liveTimer');
 showLiveTimer('liveTimer2');
 
 showNumOfFlashCards('numOfFlashcards');
+showAvgScore('avgScore');
+
+showProgressResult('progressValue');
