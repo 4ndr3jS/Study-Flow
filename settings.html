@@ -11,12 +11,12 @@
 <body>
     <nav style="transform: translateY(-65px);">
         <div class="brand">
-                        <a href="index.html" style="text-decoration: none; color: white; font-weight: bold; font-size: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">StudyFlash</a>
+            <a href="index.html" style="text-decoration: none; color: white; font-weight: bold; font-size: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">StudyFlash</a>
         </div>
         <ul>
+            <a href="index.html" class="links">Home</a>
             <a href="index.html" class="links">Dashboard</a>
             <a href="study.html" class="links">Study</a>
-            <a href="" class="links">Resources</a>
             <a href="settings.html" id="settings" style="display: none;" class="links">Settings</a>
         </ul>
     </nav>
@@ -44,7 +44,9 @@
                 </div>
             </div>
             <div class="container3">
-                <h1 class="title2">Notifications</h1>
+                <h1 class="title2">Study time</h1>
+                <label>Time spent learning:</label>
+                <label class="timespent"></label>
             </div>
         </div>
         <div class="container12">
@@ -99,7 +101,24 @@
                 </div>
             </div>
             <div class="container3">
-                <h1 class="title2">Data management</h1>
+                <h1 class="title2">Study time goal</h1>
+                <label class="goalInputLabel">Set a time goal for studying (hours per day):</label>
+                <div class="container4" style="align-items: center; gap: 10px; margin-top: 10px;">
+                    <input 
+                        type="number" 
+                        id="studyGoalInput" 
+                        min="1" 
+                        max="24" 
+                        placeholder="Hours per day"
+                        class="nameInput"
+                        style="flex: 1; max-width: 200px;">
+                    <button 
+                        id="saveGoalBtn" 
+                        class="nameChange">
+                        Save Goal
+                    </button>
+                </div>
+                <div id="currentGoalDisplay" style="display: none; margin-top: 15px; padding: 12px; background: #f0f0f0; border-radius: 5px; font-weight: 500; color: #1f2937;"></div>
             </div>
         </div>
     </div>
