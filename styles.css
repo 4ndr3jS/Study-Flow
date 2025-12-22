@@ -427,7 +427,7 @@ ul .links:hover{
 
 .container1{
     display: flex;
-    padding-left: 100px;
+    margin-right: 100px;
     flex-wrap: wrap;
     justify-content: center;
 }
@@ -1054,8 +1054,8 @@ body.dark-mode .nameInput::placeholder {
     flex-direction: row !important;
     gap: 20px;
     align-items: flex-start;
-    width: calc(100% - 364px);
-    margin-left: 182px;
+    width: 1500px;
+    justify-self: center;
     margin-top: 20px;
 }
 
@@ -1231,8 +1231,8 @@ body.dark-mode .nameInput::placeholder {
     flex-direction: row !important;
     gap: 20px;
     align-items: flex-start;
-    width: calc(100% - 364px);
-    margin-left: 182px;
+    width: 1500px;
+    justify-self: center;
     margin-top: 20px;
 }
 
@@ -1278,7 +1278,7 @@ body.dark-mode .nameInput::placeholder {
     border-radius: 16px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     padding: 30px 30px 0 45px;
-    height: 170px;
+    height: 190px;
     width: 100%;
     margin: 0;
 }
@@ -1515,7 +1515,7 @@ body.dark-mode .nameInput::placeholder {
 
 .progress-section {
     padding-top: 0;
-    height: 165px;
+    height: 185px;
 }
 
 @media (max-width: 1200px) {
