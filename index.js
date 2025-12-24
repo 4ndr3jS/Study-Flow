@@ -38,8 +38,8 @@ async function handleSignUp() {
     const success = await signUp(email, password);
     
     if(success){
-        alert('Sign up successful! Check your email to confirm your account.');
         closeModal();
+        logIn(email, password);
     }
 }
 
