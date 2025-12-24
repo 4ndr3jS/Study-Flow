@@ -32,6 +32,7 @@ async function signUp(email, password) {
 
     console.log('User has signed up: ', data);
     alert('Sign up successful!');
+    logIn(email, password)
     return true;
 }
 
@@ -46,8 +47,6 @@ async function logIn(email, password) {
         
         if(error.message.includes('Invalid login credentials')) {
             alert('Incorrect email or password. Please try again.');
-        } else if(error.message.includes('Email not confirmed')) {
-            alert('Please confirm your email before logging in. Check your inbox.');
         } else {
             alert('Log in failed: ' + error.message);
         }
